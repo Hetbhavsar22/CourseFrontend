@@ -54,6 +54,7 @@ const SignIn = () => {
           localStorage.setItem("token", response.data.token);
           localStorage.setItem("userData", JSON.stringify(response.data.user));
           setIsAuthenticated(true);
+          
         } else {
           setError("Unexpected response status: " + response.status);
         }

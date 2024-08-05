@@ -101,7 +101,7 @@ const NavbarVertical = (props) => {
       <SimpleBar style={{ maxHeight: "100vh" }}>
         <div className="nav-scroller">
           <Link
-            href="/"
+            href="/admin"
             className="navbar-brand"
             style={{ display: "flex", alignItems: "center" }}
           >

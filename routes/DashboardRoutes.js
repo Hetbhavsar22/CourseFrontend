@@ -29,7 +29,7 @@ export const DashboardMenu = [
 		id: uuid(),
 		title: 'Dashboard',
 		icon: 'home',
-		link: '/'
+		link: '/admin'
 	},
 	{
 		id: uuid(),
@@ -40,19 +40,19 @@ export const DashboardMenu = [
 		id: uuid(),
 		title: 'Courses',
 		icon: 'book',
-		link: '/course', name: 'Course' ,
+		link: '/admin/course', name: 'Course' ,
 	},	
 	{
 		id: uuid(),
 		title: 'Videos',
 		icon: 'play',
-		link: '/video', name: 'Video',
+		link: '/admin/video', name: 'Video',
 	},
 	{
 		id: uuid(),
 		title: 'Users',
 		icon: 'user',
-		link: '/user', name: 'User',
+		link: '/admin/user', name: 'User',
 	},
 	// {
 	// 	id: uuid(),

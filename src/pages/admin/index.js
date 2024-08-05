@@ -2,13 +2,14 @@ import React, { Fragment, useEffect } from "react";
 
 import { Container, Col, Row } from "react-bootstrap";
 
-import { StatRightTopIcon } from "../../widgets";
+// import { StatRightTopIcon } from "../../widgets";
+import { StatRightTopIcon } from "../../../widgets";
 
-import { ActiveProjects, Teams, TasksPerformance } from "../../sub-components";
+import { ActiveProjects, Teams, TasksPerformance } from "../../../sub-components";
 
-import ProjectsStatsData from "../../data/dashboard/ProjectsStatsData";
+import ProjectsStatsData from "../../../data/dashboard/ProjectsStatsData";
 
-import SignIn from './authentication/sign-in';
+// import SignIn from './authentication/sign-in';
 
 // import Link from "next/link";
 
@@ -21,8 +22,7 @@ function index() {
 
   return (
     <>
-    holaaa user!!!
-      {/* <Fragment>
+      <Fragment>
         <div className="bg-primary pt-10 pb-21"></div>
         <Container fluid className="mt-n22 px-6">
           <Row>
@@ -33,6 +33,9 @@ function index() {
                     <h3 className="mb-0  text-white">Courses</h3>
                   </div>
                   <div>
+                    {/* <Link href="#" className="btn btn-white">
+                      Post New Course
+                    </Link> */}
 
                     <div
                       class="modal fade"
@@ -55,18 +58,22 @@ function index() {
             })}
           </Row>
 
+          {/* Active Projects  */}
           <ActiveProjects />
 
           <Row className="my-6">
             <Col xl={4} lg={12} md={12} xs={12} className="mb-6 mb-xl-0">
+              {/* Tasks Performance  */}
               <TasksPerformance />
             </Col>
+            {/* card  */}
             <Col xl={8} lg={12} md={12} xs={12}>
+              {/* Teams  */}
               <Teams />
             </Col>
           </Row>
         </Container>
-      </Fragment> */}
+      </Fragment>
     </>
   );
 }

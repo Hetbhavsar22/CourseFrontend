@@ -2,7 +2,7 @@ import React, { Fragment, useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import Switch from "react-switch";
-import { Container, Col, Row, Card, Table, Form, Image } from "react-bootstrap";
+import { Container, Col, Row, Card, Table, Form } from "react-bootstrap";
 
 function Video() {
   const [userId, setUserId] = useState("");
@@ -18,23 +18,14 @@ function Video() {
   const [videofile, setVideofile] = useState(null);
   const [pdf, setPdf] = useState("");
   const [ppt, setPpt] = useState("");
-  const [doc, setDoc] = useState("");
+  const [document, setDocument] = useState("");
   const [tags, setTags] = useState("");
-  const [editTags, setEditTags] = useState("");
   const [selectedOption, setSelectedOption] = useState("pdf");
-  const [loading, setLoading] = useState(false);
-  const sortedVideos = videos.sort((a, b) => a.order - b.order);
   const [errors, setErrors] = useState("");
   const [error, setError] = useState("");
 
   const validateForm = () => {
     let errors = {};
-
-    if (!selectedOption) {
-      errors.typev = "Type is required.";
-    } else if (selectedOption !== "document" && selectedOption !== "video") {
-      errors.typev = "Invalid type selected.";
-    }
 
     if (!title) {
       errors.title = "Title is required.";
@@ -47,8 +38,19 @@ function Video() {
     if (!ldescription) {
       errors.ldescription = "Long Description is required.";
     }
+    if (!tags) {
+      errors.tags = "Tags is required.";
+    }
+    if (!selectedOption) {
+      errors.typev = "Type is required.";
+    } else if (selectedOption !== "document" && selectedOption !== "video") {
+      errors.typev = "Invalid type selected.";
+    }
 
     if (selectedOption === "video") {
+      if (!dvideo) {
+        errors.dvideo = "Demo Video is required.";
+      }
       if (!thumbnail) {
         errors.thumbnail = "Thumbnail of video is required.";
       }
@@ -56,14 +58,17 @@ function Video() {
         errors.videofile = "Video file is required.";
       }
     } else if (selectedOption === "document") {
-      if (!pdf && !ppt && !doc) {
-        errors.pdf = "Select any one document type.";
+      if (!pdf) {
+        errors.pdf = "Valid PDF file is required.";
+      }
+      if (!document) {
+        errors.document = "Valid DOC file is required.";
+      }
+      if (!ppt) {
+        errors.ppt = "Valid PPT file is required.";
       }
     }
 
-    if (!tags) {
-      errors.tags = "Tags is required.";
-    }
     setErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -96,7 +101,6 @@ function Video() {
     const isFormValid = validateForm();
 
     if (isFormValid) {
-      setLoading(true); // Show loader
       try {
         // Create a FormData object
         const formData = new FormData();
@@ -105,17 +109,17 @@ function Video() {
         formData.append("title", title);
         formData.append("sdescription", sdescription);
         formData.append("ldescription", ldescription);
-        formData.append("typev", typev);
+        formData.append("typev", selectedOption);
         formData.append("tags", tags);
 
         if (selectedOption === "video") {
           if (thumbnail) formData.append("thumbnail", thumbnail);
           if (videofile) formData.append("videofile", videofile);
-          if (dvideo) formData.append("dvideo", dvideo);
+          if (dvideo) formData.append("dvideo", dvideo); // Uncomment if using demo video
         } else if (selectedOption === "document") {
           if (pdf) formData.append("pdf", pdf);
           if (ppt) formData.append("ppt", ppt);
-          if (doc) formData.append("doc", doc);
+          if (document) formData.append("document", document);
         }
 
         // Append videoId if editing an existing video
@@ -141,12 +145,12 @@ function Video() {
           setSdescription("");
           setLdescription("");
           setTypev("");
-          setThumbnail("");
-          setVideofile("");
-          setPdf("");
-          setPpt("");
-          setDoc("");
-          setTags([]);
+          setThumbnail(null);
+          setVideofile(null);
+          setPdf(null);
+          setPpt(null);
+          setDocument(null);
+          setTags("");
         } else {
           setError("Unexpected response status: " + response.status);
         }
@@ -159,8 +163,6 @@ function Video() {
         } else {
           setError("Error: " + err.message);
         }
-      } finally {
-        setLoading(false); // Hide loader
       }
     } else {
       console.log("Form has errors. Please correct them.");
@@ -180,39 +182,36 @@ function Video() {
     setVideofile(video.videofile);
     setPdf(video.pdf);
     setPpt(video.ppt);
-    setDoc(video.doc);
-    setTags([]);
-    setSelectedOption(video.typev);
+    setDocument(video.document);
+    setTags(video.tags);
+    setSelectedOption(video.type || "pdf");
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this video?")) {
-      try {
-        const response = await axios.delete(
-          `http://localhost:8080/video/videodetails/${id}`
-        );
-        if (response.status === 200) {
-          console.log("Video deleted successfully");
-          fetchVideos(); // Refresh the list of videos
-        } else {
-          setError("Failed to delete video");
-        }
-      } catch (err) {
-        console.error("Delete failed:", err);
-        setError("Failed to delete video. Please try again.");
+    try {
+      const response = await axios.delete(
+        `http://localhost:8080/video/videodetails/${id}`
+      );
+      if (response.status === 200) {
+        console.log("Video deleted successfully");
+        fetchVideos(); // Refresh the list of videos
+      } else {
+        setError("Failed to delete video");
       }
+    } catch (err) {
+      console.error("Delete failed:", err);
+      setError("Failed to delete video. Please try again.");
     }
   };
 
   const handleVideoChange = (e) => {
     setSelectedOption(e.target.value);
-    setTypev(e.target.value)
 
     // Reset state variables based on selected option
     if (e.target.value !== "document") {
       setPdf(null);
       setPpt(null);
-      setDoc(null);
+      setDocument(null);
     }
     if (e.target.value !== "video") {
       setDvideo(null);
@@ -230,68 +229,34 @@ function Video() {
     }
   };
 
-  const moveVideo = (videoId, direction) => {
-    const videoIndex = videos.findIndex((video) => video._id === videoId);
-    if (videoIndex === -1) return;
-
-    const videoCourseId = videos[videoIndex].courseId;
-    const courseVideos = videos.filter(
-      (video) => video.courseId === videoCourseId
-    );
-
-    const courseVideoIndex = courseVideos.findIndex(
-      (video) => video._id === videoId
-    );
-    if (courseVideoIndex === -1) return;
-
-    const targetIndex =
-      direction === "up" ? courseVideoIndex - 1 : courseVideoIndex + 1;
-
-    // Ensure target index is within bounds
-    if (targetIndex < 0 || targetIndex >= courseVideos.length) return;
-
-    // Swap the orders
-    [courseVideos[courseVideoIndex].order, courseVideos[targetIndex].order] = [
-      courseVideos[targetIndex].order,
-      courseVideos[courseVideoIndex].order,
-    ];
-
-    // Update state
-    const newVideos = videos.map((video) => {
-      const updatedVideo = courseVideos.find((v) => v._id === video._id);
-      return updatedVideo || video;
-    });
-    setVideos(newVideos);
-
-    // Send updated order to backend
-    const updatedOrder = courseVideos.map((video, index) => ({
-      _id: video._id,
-      order: index,
-    }));
-    axios
-      .post("http://localhost:8080/video/updateVideoOrder", {
-        videos: updatedOrder,
-      })
-      .then((response) => console.log("Order updated successfully", response))
-      .catch((error) => console.error("Error updating order:", error));
+  const moveVideo = async (id, direction) => {
+    const currentIndex = videos.findIndex((video) => video._id === id);
+    if (direction === "up" && currentIndex > 0) {
+      const newIndex = currentIndex - 1;
+      const updatedVideos = [...videos];
+      [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
+        updatedVideos[newIndex],
+        updatedVideos[currentIndex],
+      ];
+      setVideos(updatedVideos);
+      // Update order in backend
+      await axios.post(`http://localhost:8080/video/updateorder`, {
+        videos: updatedVideos,
+      });
+    } else if (direction === "down" && currentIndex < videos.length - 1) {
+      const newIndex = currentIndex + 1;
+      const updatedVideos = [...videos];
+      [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
+        updatedVideos[newIndex],
+        updatedVideos[currentIndex],
+      ];
+      setVideos(updatedVideos);
+      // Update order in backend
+      await axios.post(`http://localhost:8080/video/updateorder`, {
+        videos: updatedVideos,
+      });
+    }
   };
-
-  const handleCheckboxChange = (e) => {
-    const { value, checked } = e.target;
-    setTags((prevTags) => {
-        if (checked) {
-            // Add the tag only if it does not already exist
-            if (!prevTags.includes(value)) {
-                return [...prevTags, value];
-            }
-            return prevTags;
-        } else {
-            // Remove the tag
-            return prevTags.filter((tag) => tag !== value);
-        }
-    });
-};
-
 
   return (
     <>
@@ -304,7 +269,7 @@ function Video() {
               <div>
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="mb-2 mb-lg-0">
-                    <h3 className="mb-0  text-white">Videos</h3>
+                    <h3 className="mb-0  text-white">Users</h3>
                   </div>
                   <div></div>
                 </div>
@@ -316,20 +281,23 @@ function Video() {
             <Col md={12} xs={12}>
               <Card>
                 <Card.Header className="bg-white  py-4">
-                  <h4 className="mb-0">Video Table</h4>
+                  <h4 className="mb-0">User Table</h4>
                 </Card.Header>
                 <Table responsive className="text-nowrap mb-0">
                   <thead className="table-light">
                     <tr>
                       <th style={{ textAlign: "center" }}></th>
-                      <th style={{ textAlign: "center" }}>Course Name</th>
-                      <th style={{ textAlign: "center" }}>Title</th>
-                      <th style={{ textAlign: "center" }}>Short Description</th>
+                      <th style={{ textAlign: "center" }}>User Name</th>
+                      <th style={{ textAlign: "center" }}>Eamil</th>
+                      {/* <th style={{ textAlign: "center" }}>Short Description</th>
                       <th style={{ textAlign: "center" }}>Long Description</th>
                       <th style={{ textAlign: "center" }}>Demo Video</th>
                       <th style={{ textAlign: "center" }}>Thumbnails</th>
-                      <th style={{ textAlign: "center" }}>File Type</th>
-                      <th style={{ textAlign: "center" }}>Tags</th>
+                      <th style={{ textAlign: "center" }}>Videos</th>
+                      <th style={{ textAlign: "center" }}>PDF</th>
+                      <th style={{ textAlign: "center" }}>PPT</th>
+                      <th style={{ textAlign: "center" }}>Documents</th>
+                      <th style={{ textAlign: "center" }}>Tags</th> */}
                       <th style={{ textAlign: "center" }}>Status</th>
                       <th style={{ textAlign: "center" }}>Created By</th>
                       <th style={{ textAlign: "center" }}>Created At</th>
@@ -337,15 +305,22 @@ function Video() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedVideos.map((video, index, item) => (
-                      <tr key={video._id}>
+                    {videos.map((video, index) => (
+                      <tr
+                        key={video._id}
+                        style={{
+                          filter: video.active ? "none" : "blur(1px)",
+                          opacity: video.active ? 1 : 0.6,
+                          transition: "filter 0.3s ease, opacity 0.3s ease",
+                        }}
+                      >
                         <td style={{ textAlign: "center" }}>
                           <button
                             className="btn btn-primary me-2"
                             onClick={() => moveVideo(video._id, "up")}
                             disabled={index === 0} // Disable if already at the top
                             title="Move Up"
-                            style={{ color: "white" }}
+                            style={{color: 'white'}}
                           >
                             <i class="fa fa-arrow-up" aria-hidden="true"></i>
                           </button>
@@ -354,47 +329,44 @@ function Video() {
                             onClick={() => moveVideo(video._id, "down")}
                             disabled={index === videos.length - 1} // Disable if already at the bottom
                             title="Move Down"
-                            style={{ color: "white" }}
+                            style={{color: 'white'}}
                           >
                             <i class="fa fa-arrow-down" aria-hidden="true"></i>
                           </button>
                         </td>
-                        <td style={{ textAlign: "center" }}>{video.course}</td>
-                        <td style={{ textAlign: "center" }}>{video.title}</td>
-                        <td style={{ textAlign: "center" }}>
+                        <td style={{ textAlign: "center" }}>{video.name}</td>
+                        <td style={{ textAlign: "center" }}>{video.email}</td>
+                        {/* <td style={{ textAlign: "center" }}>
                           {video.sdescription}
                         </td>
                         <td style={{ textAlign: "center" }}>
                           {video.ldescription}
                         </td>
                         <td style={{ textAlign: "center" }}>{video.dvideo}</td>
-                        {/* <td style={{ textAlign: "center" }}>
-                          <img
-                            src={video.thumbnail}
-                            alt="Thumbnail"
-                            width="200"
-                          />
-                        </td> */}
+                        
                         <td style={{ textAlign: "center" }}>
-                          <div>
-                            <div
-                              className={`icon-shape icon-md border p-4 rounded-1 ${item.brandLogoBg}`}
-                            >
-                              <Image src={video.thumbnail} alt="" />
-                            </div>
-                          </div>
+                          {video.thumbnail}
                         </td>
-                        <td style={{ textAlign: "center" }}>{video.typev}</td>
-                        <td style={{ textAlign: "center" }}>{video.tags}</td>
+                        <td style={{ textAlign: "center" }}>
+                          {video.videofile}
+                        </td>
+                        <td style={{ textAlign: "center" }}>{video.pdf}</td>
+                        <td style={{ textAlign: "center" }}>{video.ppt}</td>
+                        <td style={{ textAlign: "center" }}>
+                          {video.document}
+                        </td>
+                        <td style={{ textAlign: "center" }}>{video.tags}</td> */}
                         <td style={{ textAlign: "center" }}>
                           <Switch
                             checked={video.active}
                             onChange={() => handleToggleActive(video._id)}
-                            onColor="#e1a6bf"
-                            onHandleColor="#dc4282"
+                            onColor="#86d3ff"
+                            onHandleColor="#2693e6"
                             handleDiameter={30}
                             uncheckedIcon={false}
                             checkedIcon={false}
+                            boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"
+                            activeBoxShadow="0px 0px 1px 10px rgba(0, 0, 0, 0.2)"
                             height={20}
                             width={48}
                             className="react-switch"
@@ -457,6 +429,7 @@ function Video() {
               ></button>
             </div>
             <div className="modal-body">
+              {error && <div className="alert alert-danger">{error}</div>}
               <Form method="POST" onSubmit={handleEditSubmit}>
                 <Row className="mb-3">
                   <label className="col-sm-4 col-form-label form-label">
@@ -532,35 +505,15 @@ function Video() {
                     Short Description
                   </label>
                   <div className="col-md-8 col-12">
-                    {/* {editorLoaded ? ( */}
-                    <textarea
+                    <input
+                      type="text"
                       className="form-control"
                       id="sdescription"
                       placeholder="Short Description"
                       value={sdescription}
                       onChange={(e) => setSdescription(e.target.value)}
-                      rows="3"
                     />
-                    {/* <CustomCKEditor
-                      editorConfig={{
-                        // Your custom CKEditor configuration
-                        toolbar: ["heading", "|", "bold", "italic", "link"],
-                      }}
-                      data={sdescription}
-                      onChange={handleEditorChange}
-                    /> */}
-                    {/* <CKEditor
-                        editor={ClassicEditor}
-                        data={sdescription}
-                        onChange={(event, editor) => {
-                          const data = editor.getData();
-                          setSdescription(data);
-                        }}
-                      /> */}
-                    {/* ) : (
-                      <p>Loading editor...</p>
-                    )} */}
-                    {errors?.sdescription && (
+                    {errors.sdescription && (
                       <p
                         style={{
                           color: "red",
@@ -581,31 +534,15 @@ function Video() {
                     Long Description
                   </label>
                   <div className="col-md-8 col-12">
-                    <textarea
+                    <input
+                      type="text"
                       className="form-control"
                       id="ldescription"
                       placeholder="Long Description"
                       value={ldescription}
                       onChange={(e) => setLdescription(e.target.value)}
-                      rows="3"
                     />
-                    {/* <CustomCKEditor
-                      editorConfig={{
-                        // Your custom CKEditor configuration
-                        toolbar: ["heading", "|", "bold", "italic", "link"],
-                      }}
-                      data={ldescription}
-                      onChange={handleEditorChange}
-                    /> */}
-                    {/* <CKEditor
-                      editor={ClassicEditor}
-                      data={ldescription}
-                      onChange={(event, editor) => {
-                        const data = editor.getData();
-                        setLdescription(data);
-                      }}
-                    /> */}
-                    {errors?.ldescription && (
+                    {errors.ldescription && (
                       <p
                         style={{
                           color: "red",
@@ -649,7 +586,6 @@ function Video() {
                         )}
                       </div>
                     </Row>
-                    <p style={{ textAlign: "center" }}>OR</p>
                     <Row className="mb-3">
                       <label
                         htmlFor="ppt"
@@ -662,7 +598,6 @@ function Video() {
                           type="file"
                           className="form-control"
                           id="ppt"
-                          accept=".ppt, .pptx"
                           onChange={(e) => setPpt(e.target.files[0])}
                         />
                         {errors.ppt && (
@@ -678,10 +613,9 @@ function Video() {
                         )}
                       </div>
                     </Row>
-                    <p style={{ textAlign: "center" }}>OR</p>
                     <Row className="mb-3">
                       <label
-                        htmlFor="doc"
+                        htmlFor="document"
                         className="col-sm-4 col-form-label form-label"
                       >
                         Upload Document
@@ -690,11 +624,10 @@ function Video() {
                         <input
                           type="file"
                           className="form-control"
-                          id="doc"
-                          accept=".doc, .docx"
-                          onChange={(e) => setDoc(e.target.files[0])}
+                          id="document"
+                          onChange={(e) => setDocument(e.target.files[0])}
                         />
-                        {errors.doc && (
+                        {errors.document && (
                           <p
                             style={{
                               color: "red",
@@ -702,7 +635,7 @@ function Video() {
                               marginBottom: "6px",
                             }}
                           >
-                            {errors.doc}
+                            {errors.document}
                           </p>
                         )}
                       </div>
@@ -804,46 +737,15 @@ function Video() {
                     Tags
                   </label>
                   <div className="col-md-8 col-12">
-                    <div className="form-check">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="tag1"
-                        value="tag1"
-                        checked={tags.includes("tag1")}
-                        onChange={(e) => handleCheckboxChange(e)}
-                      />
-                      <label className="form-check-label" htmlFor="tag1">
-                        Tag 1
-                      </label>
-                    </div>
-                    <div className="form-check">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="tag2"
-                        value="tag2"
-                        checked={tags.includes("tag2")}
-                        onChange={(e) => handleCheckboxChange(e)}
-                      />
-                      <label className="form-check-label" htmlFor="tag2">
-                        Tag 2
-                      </label>
-                    </div>
-                    <div className="form-check">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="tag3"
-                        value="tag3"
-                        checked={tags.includes("tag3")}
-                        onChange={(e) => handleCheckboxChange(e)}
-                      />
-                      <label className="form-check-label" htmlFor="tag3">
-                        Tag 3
-                      </label>
-                    </div>
-                    {errors?.tags && (
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="tags"
+                      placeholder="Tags"
+                      value={tags}
+                      onChange={(e) => setTags(e.target.value)}
+                    />
+                    {errors.tags && (
                       <p
                         style={{
                           color: "red",
@@ -862,21 +764,10 @@ function Video() {
                       {error}
                     </p>
                   )}
-                  {loading && (
-                    <div className="d-flex justify-content-center align-items-center">
-                      <div
-                        className="spinner-border text-primary"
-                        role="status"
-                      >
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                    </div>
-                  )}
                   <button
                     className="btn btn-primary"
                     type="submit"
-                    // data-dismiss="modal"
-                    data-bs-dismiss="modal"
+                    data-dismiss="modal"
                   >
                     Edit
                   </button>
@@ -884,7 +775,6 @@ function Video() {
                     type="button"
                     className="btn btn-secondary"
                     data-bs-dismiss="modal"
-                    onClick={()=> setErrors({})}
                   >
                     Close
                   </button>
