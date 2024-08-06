@@ -82,7 +82,7 @@ function Video() {
   const fetchVideos = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8080/video/videodetails"
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/videodetails`
       );
       setVideos(response.data);
     } catch (error) {
@@ -124,7 +124,7 @@ function Video() {
         }
         console.log(formData);
         const response = await axios.post(
-          `http://localhost:8080/video/editvideodetails/${editVideoId}`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/editvideodetails/${editVideoId}`,
           formData,
           {
             headers: {
@@ -189,7 +189,7 @@ function Video() {
     if (window.confirm("Are you sure you want to delete this video?")) {
       try {
         const response = await axios.delete(
-          `http://localhost:8080/video/videodetails/${id}`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/videodetails/${id}`
         );
         if (response.status === 200) {
           console.log("Video deleted successfully");
@@ -223,7 +223,7 @@ function Video() {
 
   const handleToggleActive = async (id) => {
     try {
-      await axios.patch(`http://localhost:8080/video/${id}/toggle`);
+      await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/${id}/toggle`);
       fetchVideos();
     } catch (error) {
       console.error("Error toggling video status:", error);
@@ -269,7 +269,7 @@ function Video() {
       order: index,
     }));
     axios
-      .post("http://localhost:8080/video/updateVideoOrder", {
+      .post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/updateVideoOrder`, {
         videos: updatedOrder,
       })
       .then((response) => console.log("Order updated successfully", response))

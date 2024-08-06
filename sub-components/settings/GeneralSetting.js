@@ -36,7 +36,7 @@ const GeneralSetting = () => {
 
         // Make the API call to change the password
         const response = await axios.post(
-            "http://localhost:8080/users/change_password",
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/change_password`,
             {
                 currentPassword: currentPassword,
                 newPassword: newPassword,

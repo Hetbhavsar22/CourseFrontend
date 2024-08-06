@@ -79,7 +79,7 @@ const courselist = () => {
   const fetchCourses = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8080/course/courseList",
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/course/courseList`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -219,7 +219,7 @@ const courselist = () => {
       };
       try {
         const response = await axios.post(
-          `http://localhost:8080/course/${user._id}/coursedetails`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/course/${user._id}/coursedetails`,
           {
             cname,
             hours,
@@ -299,7 +299,7 @@ const courselist = () => {
         }
 
         const response = await axios.post(
-          `http://localhost:8080/course/coursedetails/${editCourseId}`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/course/coursedetails/${editCourseId}`,
           formData
         );
 
@@ -366,7 +366,7 @@ const courselist = () => {
   const handleDelete = async (id) => {
     try {
       const response = await axios.delete(
-        `http://localhost:8080/course/coursedetails/${id}`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/course/coursedetails/${id}`
       );
       if (response.status === 200) {
         console.log("Course deleted successfully");
@@ -500,7 +500,7 @@ const courselist = () => {
         }
 
         const response = await axios.post(
-          `http://localhost:8080/video/${courseId}/upload`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/${courseId}/upload`,
           formData,
           {
             headers: {
@@ -547,7 +547,7 @@ const courselist = () => {
 
   const handleToggleActive = async (id) => {
     try {
-      await axios.patch(`http://localhost:8080/course/${id}/toggle`);
+      await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/course/${id}/toggle`);
       fetchCourses(); // Refresh the list of courses
     } catch (error) {
       console.error("Error toggling course status:", error);

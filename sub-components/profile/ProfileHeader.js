@@ -17,7 +17,7 @@ const ProfileHeader = () => {
           return;
         }
 
-        const response = await axios.get("http://localhost:8080/getUserById", {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/getUserById`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -78,7 +78,7 @@ const ProfileHeader = () => {
                 <Image
                   src={
                     user.profileImage
-                      ? `http://localhost:8080${user.profileImage}`
+                      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/${user.profileImage}`
                       : "/images/default-avatar.jpg"
                   }
                   className="avatar-xxl rounded-circle border border-4 border-white-color-40"

@@ -48,7 +48,7 @@ const Profile = () => {
       }
   
       const response = await axios.post(
-        `http://localhost:8080/users/update_details`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/update_details`,
         formData,
         {
           headers: {

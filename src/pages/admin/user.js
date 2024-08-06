@@ -5,258 +5,258 @@ import Switch from "react-switch";
 import { Container, Col, Row, Card, Table, Form } from "react-bootstrap";
 
 function Video() {
-  const [userId, setUserId] = useState("");
-  const [courseId, setCourseId] = useState("");
-  const [videos, setVideos] = useState([]);
-  const [editVideoId, setEditVideoId] = useState(null);
-  const [title, setTitle] = useState("");
-  const [sdescription, setSdescription] = useState("");
-  const [ldescription, setLdescription] = useState("");
-  const [dvideo, setDvideo] = useState(null);
-  const [typev, setTypev] = useState(null);
-  const [thumbnail, setThumbnail] = useState(null);
-  const [videofile, setVideofile] = useState(null);
-  const [pdf, setPdf] = useState("");
-  const [ppt, setPpt] = useState("");
-  const [document, setDocument] = useState("");
-  const [tags, setTags] = useState("");
-  const [selectedOption, setSelectedOption] = useState("pdf");
-  const [errors, setErrors] = useState("");
-  const [error, setError] = useState("");
+  // const [userId, setUserId] = useState("");
+  // const [courseId, setCourseId] = useState("");
+  // const [videos, setVideos] = useState([]);
+  // const [editVideoId, setEditVideoId] = useState(null);
+  // const [title, setTitle] = useState("");
+  // const [sdescription, setSdescription] = useState("");
+  // const [ldescription, setLdescription] = useState("");
+  // const [dvideo, setDvideo] = useState(null);
+  // const [typev, setTypev] = useState(null);
+  // const [thumbnail, setThumbnail] = useState(null);
+  // const [videofile, setVideofile] = useState(null);
+  // const [pdf, setPdf] = useState("");
+  // const [ppt, setPpt] = useState("");
+  // const [document, setDocument] = useState("");
+  // const [tags, setTags] = useState("");
+  // const [selectedOption, setSelectedOption] = useState("pdf");
+  // const [errors, setErrors] = useState("");
+  // const [error, setError] = useState("");
 
-  const validateForm = () => {
-    let errors = {};
+  // const validateForm = () => {
+  //   let errors = {};
 
-    if (!title) {
-      errors.title = "Title is required.";
-    }
+  //   if (!title) {
+  //     errors.title = "Title is required.";
+  //   }
 
-    if (!sdescription) {
-      errors.sdescription = "Short Description is required.";
-    }
+  //   if (!sdescription) {
+  //     errors.sdescription = "Short Description is required.";
+  //   }
 
-    if (!ldescription) {
-      errors.ldescription = "Long Description is required.";
-    }
-    if (!tags) {
-      errors.tags = "Tags is required.";
-    }
-    if (!selectedOption) {
-      errors.typev = "Type is required.";
-    } else if (selectedOption !== "document" && selectedOption !== "video") {
-      errors.typev = "Invalid type selected.";
-    }
+  //   if (!ldescription) {
+  //     errors.ldescription = "Long Description is required.";
+  //   }
+  //   if (!tags) {
+  //     errors.tags = "Tags is required.";
+  //   }
+  //   if (!selectedOption) {
+  //     errors.typev = "Type is required.";
+  //   } else if (selectedOption !== "document" && selectedOption !== "video") {
+  //     errors.typev = "Invalid type selected.";
+  //   }
 
-    if (selectedOption === "video") {
-      if (!dvideo) {
-        errors.dvideo = "Demo Video is required.";
-      }
-      if (!thumbnail) {
-        errors.thumbnail = "Thumbnail of video is required.";
-      }
-      if (!videofile) {
-        errors.videofile = "Video file is required.";
-      }
-    } else if (selectedOption === "document") {
-      if (!pdf) {
-        errors.pdf = "Valid PDF file is required.";
-      }
-      if (!document) {
-        errors.document = "Valid DOC file is required.";
-      }
-      if (!ppt) {
-        errors.ppt = "Valid PPT file is required.";
-      }
-    }
+  //   if (selectedOption === "video") {
+  //     if (!dvideo) {
+  //       errors.dvideo = "Demo Video is required.";
+  //     }
+  //     if (!thumbnail) {
+  //       errors.thumbnail = "Thumbnail of video is required.";
+  //     }
+  //     if (!videofile) {
+  //       errors.videofile = "Video file is required.";
+  //     }
+  //   } else if (selectedOption === "document") {
+  //     if (!pdf) {
+  //       errors.pdf = "Valid PDF file is required.";
+  //     }
+  //     if (!document) {
+  //       errors.document = "Valid DOC file is required.";
+  //     }
+  //     if (!ppt) {
+  //       errors.ppt = "Valid PPT file is required.";
+  //     }
+  //   }
 
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Helper function to check valid file types for PDF
-  // const isValidFileType = (filename) => {
-  //   const allowedExtensions = ["pdf", "doc", "ppt"];
-  //   const ext = filename.split(".").pop().toLowerCase();
-  //   return allowedExtensions.includes(ext);
+  //   setErrors(errors);
+  //   return Object.keys(errors).length === 0;
   // };
 
-  useEffect(() => {
-    fetchVideos();
-  }, []);
+  // // Helper function to check valid file types for PDF
+  // // const isValidFileType = (filename) => {
+  // //   const allowedExtensions = ["pdf", "doc", "ppt"];
+  // //   const ext = filename.split(".").pop().toLowerCase();
+  // //   return allowedExtensions.includes(ext);
+  // // };
 
-  const fetchVideos = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:8080/video/videodetails"
-      );
-      setVideos(response.data);
-    } catch (error) {
-      console.error("Error fetching video details:", error);
-    }
-  };
+  // useEffect(() => {
+  //   fetchVideos();
+  // }, []);
 
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    const isFormValid = validateForm();
+  // const fetchVideos = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/videodetails`
+  //     );
+  //     setVideos(response.data);
+  //   } catch (error) {
+  //     console.error("Error fetching video details:", error);
+  //   }
+  // };
 
-    if (isFormValid) {
-      try {
-        // Create a FormData object
-        const formData = new FormData();
-        formData.append("createdBy", userId);
-        formData.append("courseId", courseId);
-        formData.append("title", title);
-        formData.append("sdescription", sdescription);
-        formData.append("ldescription", ldescription);
-        formData.append("typev", selectedOption);
-        formData.append("tags", tags);
+  // const handleEditSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setErrors({});
+  //   const isFormValid = validateForm();
 
-        if (selectedOption === "video") {
-          if (thumbnail) formData.append("thumbnail", thumbnail);
-          if (videofile) formData.append("videofile", videofile);
-          if (dvideo) formData.append("dvideo", dvideo); // Uncomment if using demo video
-        } else if (selectedOption === "document") {
-          if (pdf) formData.append("pdf", pdf);
-          if (ppt) formData.append("ppt", ppt);
-          if (document) formData.append("document", document);
-        }
+  //   if (isFormValid) {
+  //     try {
+  //       // Create a FormData object
+  //       const formData = new FormData();
+  //       formData.append("createdBy", userId);
+  //       formData.append("courseId", courseId);
+  //       formData.append("title", title);
+  //       formData.append("sdescription", sdescription);
+  //       formData.append("ldescription", ldescription);
+  //       formData.append("typev", selectedOption);
+  //       formData.append("tags", tags);
 
-        // Append videoId if editing an existing video
-        if (editVideoId) {
-          formData.append("editVideoId", editVideoId);
-        }
-        console.log(formData);
-        const response = await axios.post(
-          `http://localhost:8080/video/editvideodetails/${editVideoId}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+  //       if (selectedOption === "video") {
+  //         if (thumbnail) formData.append("thumbnail", thumbnail);
+  //         if (videofile) formData.append("videofile", videofile);
+  //         if (dvideo) formData.append("dvideo", dvideo); // Uncomment if using demo video
+  //       } else if (selectedOption === "document") {
+  //         if (pdf) formData.append("pdf", pdf);
+  //         if (ppt) formData.append("ppt", ppt);
+  //         if (document) formData.append("document", document);
+  //       }
 
-        if (response.status === 200) {
-          console.log("Video details updated successfully");
-          fetchVideos();
-          setEditVideoId(null);
-          setTitle("");
-          setSdescription("");
-          setLdescription("");
-          setTypev("");
-          setThumbnail(null);
-          setVideofile(null);
-          setPdf(null);
-          setPpt(null);
-          setDocument(null);
-          setTags("");
-        } else {
-          setError("Unexpected response status: " + response.status);
-        }
-      } catch (err) {
-        console.error("Update failed:", err);
-        if (err.response) {
-          setError("Failed to update Video details. Please try again.");
-        } else if (err.request) {
-          setError("No response from server. Please try again later.");
-        } else {
-          setError("Error: " + err.message);
-        }
-      }
-    } else {
-      console.log("Form has errors. Please correct them.");
-    }
-  };
+  //       // Append videoId if editing an existing video
+  //       if (editVideoId) {
+  //         formData.append("editVideoId", editVideoId);
+  //       }
+  //       console.log(formData);
+  //       const response = await axios.post(
+  //         `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/editvideodetails/${editVideoId}`,
+  //         formData,
+  //         {
+  //           headers: {
+  //             "Content-Type": "multipart/form-data",
+  //           },
+  //         }
+  //       );
 
-  const handleEdit = (video) => {
-    setEditVideoId(video._id);
-    setCourseId(video.courseId);
-    setUserId(video.userId);
-    setTitle(video.title);
-    setSdescription(video.sdescription);
-    setLdescription(video.ldescription);
-    setDvideo(video.dvideo);
-    setTypev(video.typev);
-    setThumbnail(video.thumbnail);
-    setVideofile(video.videofile);
-    setPdf(video.pdf);
-    setPpt(video.ppt);
-    setDocument(video.document);
-    setTags(video.tags);
-    setSelectedOption(video.type || "pdf");
-  };
+  //       if (response.status === 200) {
+  //         console.log("Video details updated successfully");
+  //         fetchVideos();
+  //         setEditVideoId(null);
+  //         setTitle("");
+  //         setSdescription("");
+  //         setLdescription("");
+  //         setTypev("");
+  //         setThumbnail(null);
+  //         setVideofile(null);
+  //         setPdf(null);
+  //         setPpt(null);
+  //         setDocument(null);
+  //         setTags("");
+  //       } else {
+  //         setError("Unexpected response status: " + response.status);
+  //       }
+  //     } catch (err) {
+  //       console.error("Update failed:", err);
+  //       if (err.response) {
+  //         setError("Failed to update Video details. Please try again.");
+  //       } else if (err.request) {
+  //         setError("No response from server. Please try again later.");
+  //       } else {
+  //         setError("Error: " + err.message);
+  //       }
+  //     }
+  //   } else {
+  //     console.log("Form has errors. Please correct them.");
+  //   }
+  // };
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:8080/video/videodetails/${id}`
-      );
-      if (response.status === 200) {
-        console.log("Video deleted successfully");
-        fetchVideos(); // Refresh the list of videos
-      } else {
-        setError("Failed to delete video");
-      }
-    } catch (err) {
-      console.error("Delete failed:", err);
-      setError("Failed to delete video. Please try again.");
-    }
-  };
+  // const handleEdit = (video) => {
+  //   setEditVideoId(video._id);
+  //   setCourseId(video.courseId);
+  //   setUserId(video.userId);
+  //   setTitle(video.title);
+  //   setSdescription(video.sdescription);
+  //   setLdescription(video.ldescription);
+  //   setDvideo(video.dvideo);
+  //   setTypev(video.typev);
+  //   setThumbnail(video.thumbnail);
+  //   setVideofile(video.videofile);
+  //   setPdf(video.pdf);
+  //   setPpt(video.ppt);
+  //   setDocument(video.document);
+  //   setTags(video.tags);
+  //   setSelectedOption(video.type || "pdf");
+  // };
 
-  const handleVideoChange = (e) => {
-    setSelectedOption(e.target.value);
+  // const handleDelete = async (id) => {
+  //   try {
+  //     const response = await axios.delete(
+  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/videodetails/${id}`
+  //     );
+  //     if (response.status === 200) {
+  //       console.log("Video deleted successfully");
+  //       fetchVideos(); // Refresh the list of videos
+  //     } else {
+  //       setError("Failed to delete video");
+  //     }
+  //   } catch (err) {
+  //     console.error("Delete failed:", err);
+  //     setError("Failed to delete video. Please try again.");
+  //   }
+  // };
 
-    // Reset state variables based on selected option
-    if (e.target.value !== "document") {
-      setPdf(null);
-      setPpt(null);
-      setDocument(null);
-    }
-    if (e.target.value !== "video") {
-      setDvideo(null);
-      setThumbnail(null);
-      setVideofile(null);
-    }
-  };
+  // const handleVideoChange = (e) => {
+  //   setSelectedOption(e.target.value);
 
-  const handleToggleActive = async (id) => {
-    try {
-      await axios.patch(`http://localhost:8080/video/${id}/toggle`);
-      fetchVideos();
-    } catch (error) {
-      console.error("Error toggling video status:", error);
-    }
-  };
+  //   // Reset state variables based on selected option
+  //   if (e.target.value !== "document") {
+  //     setPdf(null);
+  //     setPpt(null);
+  //     setDocument(null);
+  //   }
+  //   if (e.target.value !== "video") {
+  //     setDvideo(null);
+  //     setThumbnail(null);
+  //     setVideofile(null);
+  //   }
+  // };
 
-  const moveVideo = async (id, direction) => {
-    const currentIndex = videos.findIndex((video) => video._id === id);
-    if (direction === "up" && currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      const updatedVideos = [...videos];
-      [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
-        updatedVideos[newIndex],
-        updatedVideos[currentIndex],
-      ];
-      setVideos(updatedVideos);
-      // Update order in backend
-      await axios.post(`http://localhost:8080/video/updateorder`, {
-        videos: updatedVideos,
-      });
-    } else if (direction === "down" && currentIndex < videos.length - 1) {
-      const newIndex = currentIndex + 1;
-      const updatedVideos = [...videos];
-      [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
-        updatedVideos[newIndex],
-        updatedVideos[currentIndex],
-      ];
-      setVideos(updatedVideos);
-      // Update order in backend
-      await axios.post(`http://localhost:8080/video/updateorder`, {
-        videos: updatedVideos,
-      });
-    }
-  };
+  // const handleToggleActive = async (id) => {
+  //   try {
+  //     await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/${id}/toggle`);
+  //     fetchVideos();
+  //   } catch (error) {
+  //     console.error("Error toggling video status:", error);
+  //   }
+  // };
+
+  // const moveVideo = async (id, direction) => {
+  //   const currentIndex = videos.findIndex((video) => video._id === id);
+  //   if (direction === "up" && currentIndex > 0) {
+  //     const newIndex = currentIndex - 1;
+  //     const updatedVideos = [...videos];
+  //     [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
+  //       updatedVideos[newIndex],
+  //       updatedVideos[currentIndex],
+  //     ];
+  //     setVideos(updatedVideos);
+  //     // Update order in backend
+  //     await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/updateorder`, {
+  //       videos: updatedVideos,
+  //     });
+  //   } else if (direction === "down" && currentIndex < videos.length - 1) {
+  //     const newIndex = currentIndex + 1;
+  //     const updatedVideos = [...videos];
+  //     [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
+  //       updatedVideos[newIndex],
+  //       updatedVideos[currentIndex],
+  //     ];
+  //     setVideos(updatedVideos);
+  //     // Update order in backend
+  //     await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/updateorder`, {
+  //       videos: updatedVideos,
+  //     });
+  //   }
+  // };
 
   return (
     <>
@@ -265,7 +265,6 @@ function Video() {
         <Container fluid className="mt-n22 px-6">
           <Row>
             <Col lg={12} md={12} xs={12}>
-              {/* Page header */}
               <div>
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="mb-2 mb-lg-0">
@@ -276,28 +275,18 @@ function Video() {
               </div>
             </Col>
           </Row>
-          {/* Existing Courses Table */}
           <Row className="mt-6">
             <Col md={12} xs={12}>
               <Card>
                 <Card.Header className="bg-white  py-4">
                   <h4 className="mb-0">User Table</h4>
                 </Card.Header>
-                <Table responsive className="text-nowrap mb-0">
+                {/* <Table responsive className="text-nowrap mb-0">
                   <thead className="table-light">
                     <tr>
                       <th style={{ textAlign: "center" }}></th>
                       <th style={{ textAlign: "center" }}>User Name</th>
                       <th style={{ textAlign: "center" }}>Eamil</th>
-                      {/* <th style={{ textAlign: "center" }}>Short Description</th>
-                      <th style={{ textAlign: "center" }}>Long Description</th>
-                      <th style={{ textAlign: "center" }}>Demo Video</th>
-                      <th style={{ textAlign: "center" }}>Thumbnails</th>
-                      <th style={{ textAlign: "center" }}>Videos</th>
-                      <th style={{ textAlign: "center" }}>PDF</th>
-                      <th style={{ textAlign: "center" }}>PPT</th>
-                      <th style={{ textAlign: "center" }}>Documents</th>
-                      <th style={{ textAlign: "center" }}>Tags</th> */}
                       <th style={{ textAlign: "center" }}>Status</th>
                       <th style={{ textAlign: "center" }}>Created By</th>
                       <th style={{ textAlign: "center" }}>Created At</th>
@@ -336,26 +325,6 @@ function Video() {
                         </td>
                         <td style={{ textAlign: "center" }}>{video.name}</td>
                         <td style={{ textAlign: "center" }}>{video.email}</td>
-                        {/* <td style={{ textAlign: "center" }}>
-                          {video.sdescription}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {video.ldescription}
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.dvideo}</td>
-                        
-                        <td style={{ textAlign: "center" }}>
-                          {video.thumbnail}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {video.videofile}
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.pdf}</td>
-                        <td style={{ textAlign: "center" }}>{video.ppt}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {video.document}
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.tags}</td> */}
                         <td style={{ textAlign: "center" }}>
                           <Switch
                             checked={video.active}
@@ -396,7 +365,7 @@ function Video() {
                       </tr>
                     ))}
                   </tbody>
-                </Table>
+                </Table> */}
                 <Card.Footer className="bg-white text-center">
                   <Link href="#" className="link-primary">
                     View All Projects
@@ -408,7 +377,7 @@ function Video() {
         </Container>
       </Fragment>
       {/* Edit Video Modal */}
-      <div
+      {/* <div
         className="modal fade"
         id="editVideoModalToggle"
         aria-hidden="true"
@@ -554,10 +523,10 @@ function Video() {
                       </p>
                     )}
                   </div>
-                </Row>
+                </Row> */}
 
                 {/* PDF Input Fields */}
-                {selectedOption === "document" && (
+                {/* {selectedOption === "document" && (
                   <div>
                     <Row className="mb-3">
                       <label
@@ -641,10 +610,10 @@ function Video() {
                       </div>
                     </Row>
                   </div>
-                )}
+                )} */}
 
                 {/* Video Input Fields */}
-                {selectedOption === "video" && (
+                {/* {selectedOption === "video" && (
                   <div>
                     <Row className="mb-3">
                       <div className="col-md-8 col-12">
@@ -727,9 +696,9 @@ function Video() {
                       </div>
                     </Row>
                   </div>
-                )}
+                )} */}
 
-                <Row className="mb-3">
+                {/* <Row className="mb-3">
                   <label
                     htmlFor="tags"
                     className="col-sm-4 col-form-label form-label"
@@ -757,8 +726,8 @@ function Video() {
                       </p>
                     )}
                   </div>
-                </Row>
-                <div className="modal-footer">
+                </Row> */}
+                {/* <div className="modal-footer">
                   {error && (
                     <p className="error-message" style={{ color: "red" }}>
                       {error}
@@ -783,7 +752,7 @@ function Video() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </>
   );
 }

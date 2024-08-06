@@ -12,7 +12,7 @@ const AboutMe = () => {
 
     if (userId) {
       axios
-        .get(`http://localhost:8080/getUserById?userId=${userId}`)
+        .get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/getUserById?userId=${userId}`)
         .then((response) => setUser(response.data))
         .catch((err) => console.log(err));
     }
