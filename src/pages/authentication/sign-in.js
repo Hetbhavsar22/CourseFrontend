@@ -44,7 +44,7 @@ const SignIn = () => {
 
     if (isFormValid) {
       try {
-        const response = await axios.post("http://localhost:8080/users/login", {
+        const response = await axios.post("http://localhost:8080/admin/login", {
           email,
           password,
         });
@@ -52,7 +52,7 @@ const SignIn = () => {
         console.log(response);
         if (response.status == 200) {
           localStorage.setItem("token", response.data.token);
-          localStorage.setItem("userData", JSON.stringify(response.data.user));
+          localStorage.setItem("adminData", JSON.stringify(response.data.admin));
           setIsAuthenticated(true);
           
         } else {
@@ -90,11 +90,11 @@ const SignIn = () => {
                   />
                   <h3 className="ms-3 mb-0">Garbhsanskar Guru</h3>
                 </Link>
-                <p className="mb-6">Please enter your user information.</p>
+                <p className="mb-6">Please enter your admin information.</p>
               </div>
               <Form method="POST">
                 <Form.Group className="mb-3" controlId="email">
-                  <Form.Label>Username or email</Form.Label>
+                  <Form.Label>Admin Name or email</Form.Label>
                   <Form.Control
                     type="email"
                     name="email"

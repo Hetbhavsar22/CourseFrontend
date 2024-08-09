@@ -3,16 +3,13 @@ import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 import { Row, Col, Image, Dropdown, ListGroup } from "react-bootstrap";
-import { setCookie } from "cookies-next";
-import axios from "axios";
-import { getCookie } from "cookies-next";
 
 // simple bar scrolling used for notification item scrolling
-import SimpleBar from "simplebar-react";
+// import SimpleBar from "simplebar-react";
 import "simplebar/dist/simplebar.min.css";
 
 // import data files
-import NotificationList from "../data/Notification";
+// import NotificationList from "../data/Notification";
 
 // import hooks
 import useMounted from "../hooks/useMounted";
@@ -24,41 +21,41 @@ const QuickMenu = () => {
     query: "(min-width: 1224px)",
   });
 
-  const Notifications = () => {
-    return (
-      <SimpleBar style={{ maxHeight: "300px" }}>
-        <ListGroup variant="flush">
-          {NotificationList.map(function (item, index) {
-            return (
-              <ListGroup.Item
-                className={index === 0 ? "bg-light" : ""}
-                key={index}
-              >
-                <Row>
-                  <Col>
-                    <Link href="#" className="text-muted">
-                      <h5 className=" mb-1">{item.sender}</h5>
-                      <p className="mb-0"> {item.message}</p>
-                    </Link>
-                  </Col>
-                </Row>
-              </ListGroup.Item>
-            );
-          })}
-        </ListGroup>
-      </SimpleBar>
-    );
-  };
+  // const Notifications = () => {
+  //   return (
+  //     <SimpleBar style={{ maxHeight: "300px" }}>
+  //       <ListGroup variant="flush">
+  //         {NotificationList.map(function (item, index) {
+  //           return (
+  //             <ListGroup.Item
+  //               className={index === 0 ? "bg-light" : ""}
+  //               key={index}
+  //             >
+  //               <Row>
+  //                 <Col>
+  //                   <Link href="#" className="text-muted">
+  //                     <h5 className=" mb-1">{item.sender}</h5>
+  //                     <p className="mb-0"> {item.message}</p>
+  //                   </Link>
+  //                 </Col>
+  //               </Row>
+  //             </ListGroup.Item>
+  //           );
+  //         })}
+  //       </ListGroup>
+  //     </SimpleBar>
+  //   );
+  // };
 
   const QuickMenuDesktop = () => {
     const handleLogout = () => {
       localStorage.removeItem("token");
-      localStorage.removeItem("userData");
+      localStorage.removeItem("adminData");
       window.location.href = "/";
     };
 
-    const user = JSON.parse(localStorage.getItem("userData"));
-    // console.log('userData: ',user);
+    const admin = JSON.parse(localStorage.getItem("adminData"));
+    // console.log('adminData: ',admin);
     return (
       <ListGroup
         as="ul"
@@ -105,28 +102,28 @@ const QuickMenu = () => {
           <Dropdown.Toggle
             as="a"
             bsPrefix=" "
-            id="dropdownUser"
+            id="dropdownAdmin"
             className="btn btn-light btn-icon rounded-circle indicator indicator-primary text-muted"
           >
             <label htmlFor="file-upload">
               {/* <i className="fe fe-user"></i> */}
-              {/* <Image
-                src={user.profileImage || "/images/avatar/avatar-1.jpg"}
+              <Image
+                src={admin.profileImage || "/images/avatar/avatar-1.jpg"}
                 className="rounded-circle avatar avatar-sm"
                 alt=""
-              /> */}
+              />
             </label>
           </Dropdown.Toggle>
 
           <Dropdown.Menu
             className="dropdown-menu dropdown-menu-end "
             align="end"
-            aria-labelledby="dropdownUser"
+            aria-labelledby="dropdownAdmin"
             show
           >
             <Dropdown.Item as="div" className="px-4 pb-0 pt-2" bsPrefix=" ">
               <div className="lh-1">
-                <h5 className="mb-1"> {user.name} </h5>
+                <h5 className="mb-1"> {admin.name} </h5>
               </div>
               <div className=" dropdown-divider mt-3 mb-2"></div>
             </Dropdown.Item>
@@ -155,16 +152,16 @@ const QuickMenu = () => {
 
   // const QuickMenuMobile = () => {
   //   const handleLogout = () => {
-  //     setCookie("userToken", "", { expires: new Date(0) });
+  //     setCookie("adminToken", "", { expires: new Date(0) });
   //     localStorage.removeItem("data.token");
-  //     localStorage.removeItem("data.user._id");
+  //     localStorage.removeItem("data.admin._id");
   //     window.location.href = "/";
   //   };
-  //   const [user, setUser] = useState(null);
+  //   const [admin, setAdmin] = useState(null);
   //   const [error, setError] = useState("");
 
   //   useEffect(() => {
-  //     const fetchUser = async () => {
+  //     const fetchAdmin = async () => {
   //       try {
   //         const token = localStorage.getItem("data.token"); // Get token from local storage
 
@@ -174,7 +171,7 @@ const QuickMenu = () => {
   //         }
 
   //         const response = await axios.get(
-  //           "http://localhost:8080/getUserById",
+  //           "http://localhost:8080/getAdminById",
   //           {
   //             headers: {
   //               Authorization: `Bearer ${token}`,
@@ -182,21 +179,21 @@ const QuickMenu = () => {
   //           }
   //         );
 
-  //         setUser(response.data);
+  //         setAdmin(response.data);
   //       } catch (err) {
-  //         console.error("Error fetching user:", err);
-  //         setError("Error fetching user data");
+  //         console.error("Error fetching admin:", err);
+  //         setError("Error fetching admin data");
   //       }
   //     };
 
-  //     fetchUser();
+  //     fetchAdmin();
   //   }, []);
 
   //   if (error) {
   //     return <div>{error}</div>;
   //   }
 
-  //   if (!user) {
+  //   if (!admin) {
   //     return <div>Loading...</div>;
   //   }
   //   return (
@@ -245,11 +242,11 @@ const QuickMenu = () => {
   //           as="a"
   //           bsPrefix=" "
   //           className="rounded-circle"
-  //           id="dropdownUser"
+  //           id="dropdownAdmin"
   //         >
   //           <div className="avatar avatar-md avatar-indicators avatar-online">
   //             {/* <Image
-  //               src={user.profileImage || "/images/avatar/avatar-1.jpg"}
+  //               src={admin.profileImage || "/images/avatar/avatar-1.jpg"}
   //               className="rounded-circle avatar avatar-sm"
   //               alt=""
   //             /> */}
@@ -258,11 +255,11 @@ const QuickMenu = () => {
   //         <Dropdown.Menu
   //           className="dropdown-menu dropdown-menu-end "
   //           align="end"
-  //           aria-labelledby="dropdownUser"
+  //           aria-labelledby="dropdownAdmin"
   //         >
   //           <Dropdown.Item as="div" className="px-4 pb-0 pt-2" bsPrefix=" ">
   //             <div className="lh-1 ">
-  //               <h5 className="mb-1"> {user.name} </h5>
+  //               <h5 className="mb-1"> {admin.name} </h5>
   //             </div>
   //             <div className=" dropdown-divider mt-3 mb-2"></div>
   //           </Dropdown.Item>

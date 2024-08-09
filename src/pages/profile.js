@@ -28,27 +28,27 @@ const Profile = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [file, setFile] = useState();
-  const user = JSON.parse(localStorage.getItem("userData"));
-  
+  const admin = JSON.parse(localStorage.getItem("adminData"));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage(null);
-    
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        setErrorMessage("User is not authenticated. Please log in.");
+        setErrorMessage("Admin is not authenticated. Please log in.");
         return;
       }
-      
+
       const formData = new FormData();
       formData.append("name", name);
       if (file) {
         formData.append("profileImage", file);
       }
-  
+
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/update_details`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/update_details`,
         formData,
         {
           headers: {
@@ -57,7 +57,7 @@ const Profile = () => {
           },
         }
       );
-  
+
       if (response.status === 200) {
         setSuccessMessage("Details changed successfully!");
         setErrorMessage("");
@@ -74,7 +74,7 @@ const Profile = () => {
       setSuccessMessage("");
     }
   };
-  
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
@@ -103,10 +103,13 @@ const Profile = () => {
                   <Col md={9}>
                     <div className="d-flex align-items-center">
                       <div className="me-3">
-                        <Image
-                          src={profileImage || "/images/avatar/avatar-1.jpg"}
-                          className="rounded-circle avatar avatar-lg"
-                          alt=""
+                        <img
+                          className="rounded-circle"
+                          src={`http://localhost:8080/${admin.profileImage}`}
+                          alt={admin.name}
+                          width={50}
+                          height={50}
+                          style={{ cursor: "pointer" }}
                         />
                         <input
                           type="file"
@@ -150,7 +153,7 @@ const Profile = () => {
                       <input
                         type="email"
                         className="form-control"
-                        value={user.email}
+                        value={admin.email}
                         id="email"
                         readOnly
                       />

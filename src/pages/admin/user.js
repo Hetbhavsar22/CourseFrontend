@@ -3,260 +3,185 @@ import Link from "next/link";
 import axios from "axios";
 import Switch from "react-switch";
 import { Container, Col, Row, Card, Table, Form } from "react-bootstrap";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 function Video() {
-  // const [userId, setUserId] = useState("");
-  // const [courseId, setCourseId] = useState("");
-  // const [videos, setVideos] = useState([]);
-  // const [editVideoId, setEditVideoId] = useState(null);
-  // const [title, setTitle] = useState("");
-  // const [sdescription, setSdescription] = useState("");
-  // const [ldescription, setLdescription] = useState("");
-  // const [dvideo, setDvideo] = useState(null);
-  // const [typev, setTypev] = useState(null);
-  // const [thumbnail, setThumbnail] = useState(null);
-  // const [videofile, setVideofile] = useState(null);
-  // const [pdf, setPdf] = useState("");
-  // const [ppt, setPpt] = useState("");
-  // const [document, setDocument] = useState("");
-  // const [tags, setTags] = useState("");
-  // const [selectedOption, setSelectedOption] = useState("pdf");
-  // const [errors, setErrors] = useState("");
-  // const [error, setError] = useState("");
+  const [userId, setUserId] = useState("");
+  const [courseId, setCourseId] = useState("");
+  const [users, setUsers] = useState([]);
+  const [editUserId, setEditUserId] = useState(null);
+  const [deleteUserId, setDeleteUserId] = useState(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [enrolledCourse, setEnrolledCourse] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalUser, setTotalUser] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [sortBy, setSortBy] = useState("cname");
+  const [order, setOrder] = useState("asc");
+  const [errors, setErrors] = useState("");
+  const [error, setError] = useState("");
 
-  // const validateForm = () => {
-  //   let errors = {};
+  const validateForm = () => {
+    let errors = {};
 
-  //   if (!title) {
-  //     errors.title = "Title is required.";
-  //   }
+    if (!name) {
+      errors.name = "Course Name is required.";
+    } else if (name.length > 50) {
+      errors.name = "Name should be 50 characters or less.";
+    }
 
-  //   if (!sdescription) {
-  //     errors.sdescription = "Short Description is required.";
-  //   }
+    if (!email) {
+      errors.email = "Email is required.";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errors.email = "Email is invalid.";
+    }
 
-  //   if (!ldescription) {
-  //     errors.ldescription = "Long Description is required.";
-  //   }
-  //   if (!tags) {
-  //     errors.tags = "Tags is required.";
-  //   }
-  //   if (!selectedOption) {
-  //     errors.typev = "Type is required.";
-  //   } else if (selectedOption !== "document" && selectedOption !== "video") {
-  //     errors.typev = "Invalid type selected.";
-  //   }
+    if (!phoneNumber) {
+      errors.phoneNumber = "Phone Number is required.";
+    }
 
-  //   if (selectedOption === "video") {
-  //     if (!dvideo) {
-  //       errors.dvideo = "Demo Video is required.";
-  //     }
-  //     if (!thumbnail) {
-  //       errors.thumbnail = "Thumbnail of video is required.";
-  //     }
-  //     if (!videofile) {
-  //       errors.videofile = "Video file is required.";
-  //     }
-  //   } else if (selectedOption === "document") {
-  //     if (!pdf) {
-  //       errors.pdf = "Valid PDF file is required.";
-  //     }
-  //     if (!document) {
-  //       errors.document = "Valid DOC file is required.";
-  //     }
-  //     if (!ppt) {
-  //       errors.ppt = "Valid PPT file is required.";
-  //     }
-  //   }
+    if (!enrolledCourse) {
+      errors.enrolledCourse = "Enrolled Course is required.";
+    }
 
-  //   setErrors(errors);
-  //   return Object.keys(errors).length === 0;
-  // };
+    setErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
-  // // Helper function to check valid file types for PDF
-  // // const isValidFileType = (filename) => {
-  // //   const allowedExtensions = ["pdf", "doc", "ppt"];
-  // //   const ext = filename.split(".").pop().toLowerCase();
-  // //   return allowedExtensions.includes(ext);
-  // // };
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-  // useEffect(() => {
-  //   fetchVideos();
-  // }, []);
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/userList?page=${page}`,
+        {
+          params: {
+            search: searchQuery,
+            sortBy,
+            order,
+          },
+        }
+      );
+      setUsers(response.data.users);
+      setTotalPages(response.data.pageCount);
+      setTotalUser(response.data.totalVideo);
+    } catch (error) {
+      console.error("Error fetching Users details:", error);
+    }
+  };
 
-  // const fetchVideos = async () => {
-  //   try {
-  //     const response = await axios.get(
-  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/videodetails`
-  //     );
-  //     setVideos(response.data);
-  //   } catch (error) {
-  //     console.error("Error fetching video details:", error);
-  //   }
-  // };
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setErrors({});
+    const isFormValid = validateForm();
 
-  // const handleEditSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setErrors({});
-  //   const isFormValid = validateForm();
+    if (isFormValid) {
+      try {
+        // Create a FormData object
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("phoneNumber", phoneNumber);
+        formData.append("enrolledCourse", enrolledCourse);
 
-  //   if (isFormValid) {
-  //     try {
-  //       // Create a FormData object
-  //       const formData = new FormData();
-  //       formData.append("createdBy", userId);
-  //       formData.append("courseId", courseId);
-  //       formData.append("title", title);
-  //       formData.append("sdescription", sdescription);
-  //       formData.append("ldescription", ldescription);
-  //       formData.append("typev", selectedOption);
-  //       formData.append("tags", tags);
+        // Append videoId if editing an existing video
+        if (editUserId) {
+          formData.append("editUserId", editUserId);
+        }
+        console.log(formData);
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/editUser`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
 
-  //       if (selectedOption === "video") {
-  //         if (thumbnail) formData.append("thumbnail", thumbnail);
-  //         if (videofile) formData.append("videofile", videofile);
-  //         if (dvideo) formData.append("dvideo", dvideo); // Uncomment if using demo video
-  //       } else if (selectedOption === "document") {
-  //         if (pdf) formData.append("pdf", pdf);
-  //         if (ppt) formData.append("ppt", ppt);
-  //         if (document) formData.append("document", document);
-  //       }
+        if (response.status === 200) {
+          console.log("Video details updated successfully");
+          fetchUsers();
+          setEditUserId(null);
+          setName("");
+          setEmail("");
+          setPhoneNumber("");
+          setEnrolledCourse("");
+        } else {
+          setError("Unexpected response status: " + response.status);
+        }
+      } catch (err) {
+        console.error("Update failed:", err);
+        if (err.response) {
+          setError("Failed to update User details. Please try again.");
+        } else if (err.request) {
+          setError("No response from server. Please try again later.");
+        } else {
+          setError("Error: " + err.message);
+        }
+      }
+    } else {
+      console.log("Form has errors. Please correct them.");
+    }
+  };
 
-  //       // Append videoId if editing an existing video
-  //       if (editVideoId) {
-  //         formData.append("editVideoId", editVideoId);
-  //       }
-  //       console.log(formData);
-  //       const response = await axios.post(
-  //         `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/editvideodetails/${editVideoId}`,
-  //         formData,
-  //         {
-  //           headers: {
-  //             "Content-Type": "multipart/form-data",
-  //           },
-  //         }
-  //       );
+  const handleEdit = (user) => {
+    setEditUserId(user._id);
+    setCourseId(user.courseId);
+    setUserId(user.userId);
+    setName(user.name);
+    setEmail(user.email);
+    setPhoneNumber(user.phoneNumber);
+    setEnrolledCourse(user.enrolledCourse);
+  };
 
-  //       if (response.status === 200) {
-  //         console.log("Video details updated successfully");
-  //         fetchVideos();
-  //         setEditVideoId(null);
-  //         setTitle("");
-  //         setSdescription("");
-  //         setLdescription("");
-  //         setTypev("");
-  //         setThumbnail(null);
-  //         setVideofile(null);
-  //         setPdf(null);
-  //         setPpt(null);
-  //         setDocument(null);
-  //         setTags("");
-  //       } else {
-  //         setError("Unexpected response status: " + response.status);
-  //       }
-  //     } catch (err) {
-  //       console.error("Update failed:", err);
-  //       if (err.response) {
-  //         setError("Failed to update Video details. Please try again.");
-  //       } else if (err.request) {
-  //         setError("No response from server. Please try again later.");
-  //       } else {
-  //         setError("Error: " + err.message);
-  //       }
-  //     }
-  //   } else {
-  //     console.log("Form has errors. Please correct them.");
-  //   }
-  // };
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        const response = await axios.delete(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/deleteUser/${id}`
+        );
+        if (response.status === 200) {
+          console.log("User deleted successfully");
+          fetchUsers(); // Refresh the list of videos
+        } else {
+          setError("Failed to delete user");
+        }
+      } catch (err) {
+        console.error("Delete failed:", err);
+        setError("Failed to delete user. Please try again.");
+      }
+    }
+  };
 
-  // const handleEdit = (video) => {
-  //   setEditVideoId(video._id);
-  //   setCourseId(video.courseId);
-  //   setUserId(video.userId);
-  //   setTitle(video.title);
-  //   setSdescription(video.sdescription);
-  //   setLdescription(video.ldescription);
-  //   setDvideo(video.dvideo);
-  //   setTypev(video.typev);
-  //   setThumbnail(video.thumbnail);
-  //   setVideofile(video.videofile);
-  //   setPdf(video.pdf);
-  //   setPpt(video.ppt);
-  //   setDocument(video.document);
-  //   setTags(video.tags);
-  //   setSelectedOption(video.type || "pdf");
-  // };
+  const handleToggleActive = async (id) => {
+    try {
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/${id}/toggle`
+      );
+      fetchUsers();
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+    }
+  };
 
-  // const handleDelete = async (id) => {
-  //   try {
-  //     const response = await axios.delete(
-  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/video/videodetails/${id}`
-  //     );
-  //     if (response.status === 200) {
-  //       console.log("Video deleted successfully");
-  //       fetchVideos(); // Refresh the list of videos
-  //     } else {
-  //       setError("Failed to delete video");
-  //     }
-  //   } catch (err) {
-  //     console.error("Delete failed:", err);
-  //     setError("Failed to delete video. Please try again.");
-  //   }
-  // };
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to first page on new search
+  };
 
-  // const handleVideoChange = (e) => {
-  //   setSelectedOption(e.target.value);
-
-  //   // Reset state variables based on selected option
-  //   if (e.target.value !== "document") {
-  //     setPdf(null);
-  //     setPpt(null);
-  //     setDocument(null);
-  //   }
-  //   if (e.target.value !== "video") {
-  //     setDvideo(null);
-  //     setThumbnail(null);
-  //     setVideofile(null);
-  //   }
-  // };
-
-  // const handleToggleActive = async (id) => {
-  //   try {
-  //     await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/${id}/toggle`);
-  //     fetchVideos();
-  //   } catch (error) {
-  //     console.error("Error toggling video status:", error);
-  //   }
-  // };
-
-  // const moveVideo = async (id, direction) => {
-  //   const currentIndex = videos.findIndex((video) => video._id === id);
-  //   if (direction === "up" && currentIndex > 0) {
-  //     const newIndex = currentIndex - 1;
-  //     const updatedVideos = [...videos];
-  //     [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
-  //       updatedVideos[newIndex],
-  //       updatedVideos[currentIndex],
-  //     ];
-  //     setVideos(updatedVideos);
-  //     // Update order in backend
-  //     await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/updateorder`, {
-  //       videos: updatedVideos,
-  //     });
-  //   } else if (direction === "down" && currentIndex < videos.length - 1) {
-  //     const newIndex = currentIndex + 1;
-  //     const updatedVideos = [...videos];
-  //     [updatedVideos[currentIndex], updatedVideos[newIndex]] = [
-  //       updatedVideos[newIndex],
-  //       updatedVideos[currentIndex],
-  //     ];
-  //     setVideos(updatedVideos);
-  //     // Update order in backend
-  //     await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/video/updateorder`, {
-  //       videos: updatedVideos,
-  //     });
-  //   }
-  // };
+  const handleSort = (column) => {
+    // Toggle between ascending and descending order
+    const newOrder = sortBy === column && order === "asc" ? "desc" : "asc";
+    setSortBy(column);
+    setOrder(newOrder);
+  };
 
   return (
     <>
@@ -278,98 +203,150 @@ function Video() {
           <Row className="mt-6">
             <Col md={12} xs={12}>
               <Card>
-                <Card.Header className="bg-white  py-4">
+                <Card.Header className="bg-white py-4 d-flex justify-content-between align-items-center">
                   <h4 className="mb-0">User Table</h4>
+                  <div className="mb-0">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search by video name"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                    />
+                  </div>
                 </Card.Header>
-                {/* <Table responsive className="text-nowrap mb-0">
+                <Table responsive className="text-nowrap mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ textAlign: "center" }}></th>
-                      <th style={{ textAlign: "center" }}>User Name</th>
-                      <th style={{ textAlign: "center" }}>Eamil</th>
-                      <th style={{ textAlign: "center" }}>Status</th>
-                      <th style={{ textAlign: "center" }}>Created By</th>
-                      <th style={{ textAlign: "center" }}>Created At</th>
-                      <th style={{ textAlign: "center" }}>Action</th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("name")}
+                      >
+                        User Name{" "}
+                        {sortBy === "name" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("email")}
+                      >
+                        Email{" "}
+                        {sortBy === "email" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("phoneNumber")}
+                      >
+                        Phone Number{" "}
+                        {sortBy === "phoneNumber" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("otp")}
+                      >
+                        OTP{" "}
+                        {sortBy === "otp" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("enrolledCourse")}
+                      >
+                        Enrolled Course{" "}
+                        {sortBy === "enrolledCourse" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center" }}
+                      >
+                        Status
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("createdAt")}
+                      >
+                        Created At{" "}
+                        {sortBy === "createdAt" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center" }}
+                      >
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {videos.map((video, index) => (
-                      <tr
-                        key={video._id}
-                        style={{
-                          filter: video.active ? "none" : "blur(1px)",
-                          opacity: video.active ? 1 : 0.6,
-                          transition: "filter 0.3s ease, opacity 0.3s ease",
-                        }}
-                      >
-                        <td style={{ textAlign: "center" }}>
-                          <button
-                            className="btn btn-primary me-2"
-                            onClick={() => moveVideo(video._id, "up")}
-                            disabled={index === 0} // Disable if already at the top
-                            title="Move Up"
-                            style={{color: 'white'}}
-                          >
-                            <i class="fa fa-arrow-up" aria-hidden="true"></i>
-                          </button>
-                          <button
-                            className="btn btn-primary"
-                            onClick={() => moveVideo(video._id, "down")}
-                            disabled={index === videos.length - 1} // Disable if already at the bottom
-                            title="Move Down"
-                            style={{color: 'white'}}
-                          >
-                            <i class="fa fa-arrow-down" aria-hidden="true"></i>
-                          </button>
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.name}</td>
-                        <td style={{ textAlign: "center" }}>{video.email}</td>
-                        <td style={{ textAlign: "center" }}>
-                          <Switch
-                            checked={video.active}
-                            onChange={() => handleToggleActive(video._id)}
-                            onColor="#86d3ff"
-                            onHandleColor="#2693e6"
-                            handleDiameter={30}
-                            uncheckedIcon={false}
-                            checkedIcon={false}
-                            boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"
-                            activeBoxShadow="0px 0px 1px 10px rgba(0, 0, 0, 0.2)"
-                            height={20}
-                            width={48}
-                            className="react-switch"
-                            id="material-switch"
-                          />
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.user}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {new Date(video.createdAt).toLocaleDateString()}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          <button
-                            className="btn btn-primary me-2 mb-md-0"
-                            onClick={() => handleEdit(video)}
-                            data-bs-toggle="modal"
-                            href="#editVideoModalToggle"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleDelete(video._id)}
-                          >
-                            Delete
-                          </button>
+                    {users.length > 0 ? (
+                      users &&
+                      users.map((user) => (
+                        <tr key={user._id}>
+                          <td style={{ textAlign: "center" }}>{user.name}</td>
+                          <td style={{ textAlign: "center" }}>{user.email}</td>
+                          <td style={{ textAlign: "center" }}>
+                            {user.phoneNumber}
+                          </td>
+                          <td style={{ textAlign: "center" }}>{user.otp}</td>
+                          <td style={{ textAlign: "center" }}>
+                            {user.enrolledCourse}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <Switch
+                              checked={user.active}
+                              onChange={() => handleToggleActive(user._id)}
+                              onColor="#e1a6bf"
+                              onHandleColor="#dc4282"
+                              handleDiameter={30}
+                              uncheckedIcon={false}
+                              checkedIcon={false}
+                              height={20}
+                              width={48}
+                              className="react-switch"
+                              id="material-switch"
+                            />
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <button
+                              className="btn btn-primary me-2 mb-md-0"
+                              onClick={() => handleEdit(user)}
+                              data-bs-toggle="modal"
+                              href="#editUserModalToggle"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              onClick={() => handleDelete(user._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: "right" }}>
+                          No User available.
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
-                </Table> */}
+                </Table>
                 <Card.Footer className="bg-white text-center">
-                  <Link href="#" className="link-primary">
-                    View All Projects
-                  </Link>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <p className="mb-0">Total Courses: {totalUser}</p>
+                    <Stack spacing={2} className="pagination">
+                      <Pagination
+                        count={totalPages}
+                        page={page}
+                        onChange={(event, value) => setPage(value)}
+                        style={{ color: "white" }}
+                        siblingCount={1}
+                        boundaryCount={1}
+                        showFirstButton
+                        showLastButton
+                      />
+                    </Stack>
+                  </div>
                 </Card.Footer>
               </Card>
             </Col>
@@ -377,18 +354,18 @@ function Video() {
         </Container>
       </Fragment>
       {/* Edit Video Modal */}
-      {/* <div
+      <div
         className="modal fade"
-        id="editVideoModalToggle"
+        id="editUserModalToggle"
         aria-hidden="true"
-        aria-labelledby="editVideoModalToggle"
+        aria-labelledby="editUserModalToggle"
         tabIndex="-1"
       >
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h1 className="modal-title fs-5" id="editVideoModalToggle">
-                Edit Video
+              <h1 className="modal-title fs-5" id="editUserModalToggle">
+                Edit Users
               </h1>
               <button
                 type="button"
@@ -399,61 +376,24 @@ function Video() {
             </div>
             <div className="modal-body">
               {error && <div className="alert alert-danger">{error}</div>}
-              <Form method="POST" onSubmit={handleEditSubmit}>
-                <Row className="mb-3">
-                  <label className="col-sm-4 col-form-label form-label">
-                    Type
-                  </label>
-                  <div className="col-md-8 col-12">
-                    <div>
-                      <input
-                        type="radio"
-                        value="document"
-                        checked={selectedOption === "document"}
-                        onChange={handleVideoChange}
-                      />{" "}
-                      Document
-                    </div>
-                    <div>
-                      <input
-                        type="radio"
-                        value="video"
-                        checked={selectedOption === "video"}
-                        onChange={handleVideoChange}
-                      />{" "}
-                      Video
-                    </div>
-                    {errors.typev && (
-                      <p
-                        style={{
-                          color: "red",
-                          fontSize: "14px",
-                          marginBottom: "6px",
-                        }}
-                      >
-                        {errors.typev}
-                      </p>
-                    )}
-                  </div>
-                </Row>
-
+              <Form method="PUT" onSubmit={handleEditSubmit}>
                 <Row className="mb-3">
                   <label
-                    htmlFor="title"
+                    htmlFor="name"
                     className="col-sm-4 col-form-label form-label"
                   >
-                    Title
+                    Name
                   </label>
                   <div className="col-md-8 col-12">
                     <input
                       type="text"
                       className="form-control"
-                      id="title"
-                      placeholder="Title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      id="name"
+                      placeholder="Name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                     />
-                    {errors.title && (
+                    {errors.name && (
                       <p
                         style={{
                           color: "red",
@@ -461,28 +401,28 @@ function Video() {
                           marginBottom: "6px",
                         }}
                       >
-                        {errors.title}
+                        {errors.name}
                       </p>
                     )}
                   </div>
                 </Row>
                 <Row className="mb-3">
                   <label
-                    htmlFor="sdescription"
+                    htmlFor="email"
                     className="col-sm-4 col-form-label form-label"
                   >
-                    Short Description
+                    email
                   </label>
                   <div className="col-md-8 col-12">
                     <input
-                      type="text"
+                      type="email"
                       className="form-control"
-                      id="sdescription"
-                      placeholder="Short Description"
-                      value={sdescription}
-                      onChange={(e) => setSdescription(e.target.value)}
+                      id="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                     />
-                    {errors.sdescription && (
+                    {errors.email && (
                       <p
                         style={{
                           color: "red",
@@ -490,28 +430,28 @@ function Video() {
                           marginBottom: "6px",
                         }}
                       >
-                        {errors.sdescription}
+                        {errors.email}
                       </p>
                     )}
                   </div>
                 </Row>
                 <Row className="mb-3">
                   <label
-                    htmlFor="ldescription"
+                    htmlFor="phoneNumber"
                     className="col-sm-4 col-form-label form-label"
                   >
-                    Long Description
+                    Phone Number
                   </label>
                   <div className="col-md-8 col-12">
                     <input
-                      type="text"
+                      type="number"
                       className="form-control"
-                      id="ldescription"
-                      placeholder="Long Description"
-                      value={ldescription}
-                      onChange={(e) => setLdescription(e.target.value)}
+                      id="phoneNumber"
+                      placeholder="Phone Number"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
                     />
-                    {errors.ldescription && (
+                    {errors.phoneNumber && (
                       <p
                         style={{
                           color: "red",
@@ -519,202 +459,28 @@ function Video() {
                           marginBottom: "6px",
                         }}
                       >
-                        {errors.ldescription}
+                        {errors.phoneNumber}
                       </p>
                     )}
                   </div>
-                </Row> */}
-
-                {/* PDF Input Fields */}
-                {/* {selectedOption === "document" && (
-                  <div>
-                    <Row className="mb-3">
-                      <label
-                        htmlFor="pdf"
-                        className="col-sm-4 col-form-label form-label"
-                      >
-                        Upload PDF
-                      </label>
-                      <div className="col-md-8 col-12">
-                        <input
-                          type="file"
-                          className="form-control"
-                          id="pdf"
-                          onChange={(e) => setPdf(e.target.files[0])}
-                        />
-                        {errors.pdf && (
-                          <p
-                            style={{
-                              color: "red",
-                              fontSize: "14px",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            {errors.pdf}
-                          </p>
-                        )}
-                      </div>
-                    </Row>
-                    <Row className="mb-3">
-                      <label
-                        htmlFor="ppt"
-                        className="col-sm-4 col-form-label form-label"
-                      >
-                        Upload PPT
-                      </label>
-                      <div className="col-md-8 col-12">
-                        <input
-                          type="file"
-                          className="form-control"
-                          id="ppt"
-                          onChange={(e) => setPpt(e.target.files[0])}
-                        />
-                        {errors.ppt && (
-                          <p
-                            style={{
-                              color: "red",
-                              fontSize: "14px",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            {errors.ppt}
-                          </p>
-                        )}
-                      </div>
-                    </Row>
-                    <Row className="mb-3">
-                      <label
-                        htmlFor="document"
-                        className="col-sm-4 col-form-label form-label"
-                      >
-                        Upload Document
-                      </label>
-                      <div className="col-md-8 col-12">
-                        <input
-                          type="file"
-                          className="form-control"
-                          id="document"
-                          onChange={(e) => setDocument(e.target.files[0])}
-                        />
-                        {errors.document && (
-                          <p
-                            style={{
-                              color: "red",
-                              fontSize: "14px",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            {errors.document}
-                          </p>
-                        )}
-                      </div>
-                    </Row>
-                  </div>
-                )} */}
-
-                {/* Video Input Fields */}
-                {/* {selectedOption === "video" && (
-                  <div>
-                    <Row className="mb-3">
-                      <div className="col-md-8 col-12">
-                        <input
-                          type="checkbox"
-                          id="dvideo"
-                          name="dvideo"
-                          value={dvideo}
-                          checked={dvideo}
-                          onChange={(e) => setDvideo(e.target.checked)}
-                        />
-                        <label htmlFor="dvideo" className="form-label">
-                          Use video as Demo Video
-                        </label>
-                        {errors.dvideo && (
-                          <p
-                            style={{
-                              color: "red",
-                              fontSize: "14px",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            {errors.dvideo}
-                          </p>
-                        )}
-                      </div>
-                    </Row>
-                    <Row className="mb-3">
-                      <label
-                        htmlFor="thumbnail"
-                        className="col-sm-4 col-form-label form-label"
-                      >
-                        Thumbnail
-                      </label>
-                      <div className="col-md-8 col-12">
-                        <input
-                          type="file"
-                          className="form-control"
-                          id="thumbnail"
-                          onChange={(e) => setThumbnail(e.target.files[0])}
-                        />
-                        {errors.thumbnail && (
-                          <p
-                            style={{
-                              color: "red",
-                              fontSize: "14px",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            {errors.thumbnail}
-                          </p>
-                        )}
-                      </div>
-                    </Row>
-                    <Row className="mb-3">
-                      <label
-                        htmlFor="videofile"
-                        className="col-sm-4 col-form-label form-label"
-                      >
-                        Upload Video
-                      </label>
-                      <div className="col-md-8 col-12">
-                        <input
-                          type="file"
-                          className="form-control"
-                          id="videofile"
-                          onChange={(e) => setVideofile(e.target.files[0])}
-                        />
-                        {errors.videofile && (
-                          <p
-                            style={{
-                              color: "red",
-                              fontSize: "14px",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            {errors.videofile}
-                          </p>
-                        )}
-                      </div>
-                    </Row>
-                  </div>
-                )} */}
-
-                {/* <Row className="mb-3">
+                </Row>
+                <Row className="mb-3">
                   <label
-                    htmlFor="tags"
+                    htmlFor="enrolledCourse"
                     className="col-sm-4 col-form-label form-label"
                   >
-                    Tags
+                    Enrolled Course
                   </label>
                   <div className="col-md-8 col-12">
                     <input
                       type="text"
                       className="form-control"
-                      id="tags"
-                      placeholder="Tags"
-                      value={tags}
-                      onChange={(e) => setTags(e.target.value)}
+                      id="enrolledCourse"
+                      placeholder="Enrolled Course"
+                      value={enrolledCourse}
+                      onChange={(e) => setEnrolledCourse(e.target.value)}
                     />
-                    {errors.tags && (
+                    {errors.enrolledCourse && (
                       <p
                         style={{
                           color: "red",
@@ -722,12 +488,12 @@ function Video() {
                           marginBottom: "6px",
                         }}
                       >
-                        {errors.tags}
+                        {errors.enrolledCourse}
                       </p>
                     )}
                   </div>
-                </Row> */}
-                {/* <div className="modal-footer">
+                </Row>
+                <div className="modal-footer">
                   {error && (
                     <p className="error-message" style={{ color: "red" }}>
                       {error}
@@ -736,7 +502,8 @@ function Video() {
                   <button
                     className="btn btn-primary"
                     type="submit"
-                    data-dismiss="modal"
+                    data-bs-dismiss="modal"
+                    style={{ color: "white" }}
                   >
                     Edit
                   </button>
@@ -752,7 +519,7 @@ function Video() {
             </div>
           </div>
         </div>
-      </div> */}
+      </div>
     </>
   );
 }

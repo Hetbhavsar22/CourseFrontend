@@ -2,10 +2,22 @@ import React, { Fragment, useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import Switch from "react-switch";
-import { Container, Col, Row, Card, Table, Form, Image } from "react-bootstrap";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
+import {
+  Container,
+  Col,
+  Row,
+  Card,
+  Table,
+  Form,
+  Modal,
+  Button,
+  Image,
+} from "react-bootstrap";
 
 function Video() {
-  const [userId, setUserId] = useState("");
+  const [adminId, setAdminId] = useState("");
   const [courseId, setCourseId] = useState("");
   const [videos, setVideos] = useState([]);
   const [editVideoId, setEditVideoId] = useState(null);
@@ -20,10 +32,18 @@ function Video() {
   const [ppt, setPpt] = useState("");
   const [doc, setDoc] = useState("");
   const [tags, setTags] = useState("");
-  const [editTags, setEditTags] = useState("");
   const [selectedOption, setSelectedOption] = useState("pdf");
   const [loading, setLoading] = useState(false);
-  const sortedVideos = videos.sort((a, b) => a.order - b.order);
+  const [showModal, setShowModal] = useState(false);
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [modalContent, setModalContent] = useState({ type: "", src: "" });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalVideo, setTotalVideo] = useState(0);
+  const [sortBy, setSortBy] = useState("cname");
+  const [order, setOrder] = useState("asc");
   const [errors, setErrors] = useState("");
   const [error, setError] = useState("");
 
@@ -77,14 +97,23 @@ function Video() {
 
   useEffect(() => {
     fetchVideos();
-  }, []);
+  }, [searchQuery, page, sortBy, order]);
 
   const fetchVideos = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8080/video/videodetails"
+        `http://localhost:8080/video/videodetails?page=${page}`,
+        {
+          params: {
+            search: searchQuery,
+            sortBy,
+            order,
+          },
+        }
       );
-      setVideos(response.data);
+      setVideos(response.data.videoData || []);
+      setTotalPages(response.data.pageCount);
+      setTotalVideo(response.data.totalVideo);
     } catch (error) {
       console.error("Error fetching video details:", error);
     }
@@ -100,7 +129,7 @@ function Video() {
       try {
         // Create a FormData object
         const formData = new FormData();
-        formData.append("createdBy", userId);
+        formData.append("createdBy", adminId);
         formData.append("courseId", courseId);
         formData.append("title", title);
         formData.append("sdescription", sdescription);
@@ -170,7 +199,7 @@ function Video() {
   const handleEdit = (video) => {
     setEditVideoId(video._id);
     setCourseId(video.courseId);
-    setUserId(video.userId);
+    setAdminId(video.adminId);
     setTitle(video.title);
     setSdescription(video.sdescription);
     setLdescription(video.ldescription);
@@ -206,7 +235,7 @@ function Video() {
 
   const handleVideoChange = (e) => {
     setSelectedOption(e.target.value);
-    setTypev(e.target.value)
+    setTypev(e.target.value);
 
     // Reset state variables based on selected option
     if (e.target.value !== "document") {
@@ -279,19 +308,44 @@ function Video() {
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
     setTags((prevTags) => {
-        if (checked) {
-            // Add the tag only if it does not already exist
-            if (!prevTags.includes(value)) {
-                return [...prevTags, value];
-            }
-            return prevTags;
-        } else {
-            // Remove the tag
-            return prevTags.filter((tag) => tag !== value);
+      if (checked) {
+        // Add the tag only if it does not already exist
+        if (!prevTags.includes(value)) {
+          return [...prevTags, value];
         }
+        return prevTags;
+      } else {
+        // Remove the tag
+        return prevTags.filter((tag) => tag !== value);
+      }
     });
-};
+  };
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to first page on new search
+  };
+
+  const handleSort = (column) => {
+    // Toggle between ascending and descending order
+    const newOrder = sortBy === column && order === "asc" ? "desc" : "asc";
+    setSortBy(column);
+    setOrder(newOrder);
+  };
+
+  const handleImageClick = (thumbnail) => {
+    setSelectedImage(thumbnail);
+    setShowModal(true);
+  };
+
+  const handleClose = () => setShowModal(false);
+
+  const handleFileClick = (type, filePath) => {
+    setModalContent({ type, src: `http://localhost:8080/${filePath}` });
+    setShowFileModal(true);
+  };
+
+  const handleFileClose = () => setShowFileModal(false);
 
   return (
     <>
@@ -315,120 +369,222 @@ function Video() {
           <Row className="mt-6">
             <Col md={12} xs={12}>
               <Card>
-                <Card.Header className="bg-white  py-4">
+                <Card.Header className="bg-white py-4 d-flex justify-content-between align-items-center">
                   <h4 className="mb-0">Video Table</h4>
+                  <div className="mb-0">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search by video name"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                    />
+                  </div>
                 </Card.Header>
                 <Table responsive className="text-nowrap mb-0">
                   <thead className="table-light">
                     <tr>
                       <th style={{ textAlign: "center" }}></th>
-                      <th style={{ textAlign: "center" }}>Course Name</th>
-                      <th style={{ textAlign: "center" }}>Title</th>
-                      <th style={{ textAlign: "center" }}>Short Description</th>
-                      <th style={{ textAlign: "center" }}>Long Description</th>
-                      <th style={{ textAlign: "center" }}>Demo Video</th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("cname")}
+                      >
+                        Course Name{" "}
+                        {sortBy === "cname" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("title")}
+                      >
+                        Title{" "}
+                        {sortBy === "title" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("sdescription")}
+                      >
+                        Short Description{" "}
+                        {sortBy === "sdescription" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("ldescription")}
+                      >
+                        Long Description{" "}
+                        {sortBy === "ldescription" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("dvideo")}
+                      >
+                        Demo Video{" "}
+                        {sortBy === "dvideo" && (order === "asc" ? "▲" : "▼")}
+                      </th>
                       <th style={{ textAlign: "center" }}>Thumbnails</th>
                       <th style={{ textAlign: "center" }}>File Type</th>
-                      <th style={{ textAlign: "center" }}>Tags</th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("tags")}
+                      >
+                        Tags{" "}
+                        {sortBy === "tags" && (order === "asc" ? "▲" : "▼")}
+                      </th>
                       <th style={{ textAlign: "center" }}>Status</th>
-                      <th style={{ textAlign: "center" }}>Created By</th>
-                      <th style={{ textAlign: "center" }}>Created At</th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("createdBy")}
+                      >
+                        Created By{" "}
+                        {sortBy === "createdBy" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("createdAt")}
+                      >
+                        Created At{" "}
+                        {sortBy === "createdAt" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
                       <th style={{ textAlign: "center" }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedVideos.map((video, index, item) => (
-                      <tr key={video._id}>
-                        <td style={{ textAlign: "center" }}>
-                          <button
-                            className="btn btn-primary me-2"
-                            onClick={() => moveVideo(video._id, "up")}
-                            disabled={index === 0} // Disable if already at the top
-                            title="Move Up"
-                            style={{ color: "white" }}
-                          >
-                            <i class="fa fa-arrow-up" aria-hidden="true"></i>
-                          </button>
-                          <button
-                            className="btn btn-primary"
-                            onClick={() => moveVideo(video._id, "down")}
-                            disabled={index === videos.length - 1} // Disable if already at the bottom
-                            title="Move Down"
-                            style={{ color: "white" }}
-                          >
-                            <i class="fa fa-arrow-down" aria-hidden="true"></i>
-                          </button>
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.course}</td>
-                        <td style={{ textAlign: "center" }}>{video.title}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {video.sdescription}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {video.ldescription}
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.dvideo}</td>
-                        {/* <td style={{ textAlign: "center" }}>
-                          <img
-                            src={video.thumbnail}
-                            alt="Thumbnail"
-                            width="200"
-                          />
-                        </td> */}
-                        <td style={{ textAlign: "center" }}>
-                          <div>
-                            <div
-                              className={`icon-shape icon-md border p-4 rounded-1 ${item.brandLogoBg}`}
+                  {videos.length > 0 ? (
+                    Array.isArray(videos) &&
+                      videos.map((video, index) => (
+                        <tr key={video._id}>
+                          <td style={{ textAlign: "center" }}>
+                            <button
+                              className="btn btn-primary me-2"
+                              onClick={() => moveVideo(video._id, "up")}
+                              disabled={index === 0} // Disable if already at the top
+                              title="Move Up"
+                              style={{ color: "white" }}
                             >
-                              <Image src={video.thumbnail} alt="" />
+                              <i
+                                className="fa fa-arrow-up"
+                                aria-hidden="true"
+                              ></i>
+                            </button>
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => moveVideo(video._id, "down")}
+                              disabled={index === videos.length - 1} // Disable if already at the bottom
+                              title="Move Down"
+                              style={{ color: "white" }}
+                            >
+                              <i
+                                className="fa fa-arrow-down"
+                                aria-hidden="true"
+                              ></i>
+                            </button>
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {video.course}
+                          </td>
+                          <td style={{ textAlign: "center" }}>{video.title}</td>
+                          <td style={{ textAlign: "center" }}>
+                            {video.sdescription}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {video.ldescription}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {video.dvideo}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <div>
+                              <img
+                                className="rounded-circle"
+                                src={`http://localhost:8080/public/thumbnails/${video.thumbnail}`}
+                                alt={video.thumbnail}
+                                width={50}
+                                height={50}
+                                style={{ cursor: "pointer" }}
+                                onClick={() =>
+                                  handleImageClick(video.thumbnail)
+                                }
+                              />
                             </div>
-                          </div>
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.typev}</td>
-                        <td style={{ textAlign: "center" }}>{video.tags}</td>
-                        <td style={{ textAlign: "center" }}>
-                          <Switch
-                            checked={video.active}
-                            onChange={() => handleToggleActive(video._id)}
-                            onColor="#e1a6bf"
-                            onHandleColor="#dc4282"
-                            handleDiameter={30}
-                            uncheckedIcon={false}
-                            checkedIcon={false}
-                            height={20}
-                            width={48}
-                            className="react-switch"
-                            id="material-switch"
-                          />
-                        </td>
-                        <td style={{ textAlign: "center" }}>{video.user}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {new Date(video.createdAt).toLocaleDateString()}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          <button
-                            className="btn btn-primary me-2 mb-md-0"
-                            onClick={() => handleEdit(video)}
-                            data-bs-toggle="modal"
-                            href="#editVideoModalToggle"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleDelete(video._id)}
-                          >
-                            Delete
-                          </button>
-                        </td>
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <Button
+                              variant="link"
+                              onClick={() =>
+                                handleFileClick(
+                                  video.typev,
+                                  `public/${video.typev}/${video.filePath}`
+                                )
+                              }
+                            >
+                              View {video.typev}
+                            </Button>
+                          </td>
+                          <td style={{ textAlign: "center" }}>{video.tags}</td>
+                          <td style={{ textAlign: "center" }}>
+                            <Switch
+                              checked={video.active}
+                              onChange={() => handleToggleActive(video._id)}
+                              onColor="#e1a6bf"
+                              onHandleColor="#dc4282"
+                              handleDiameter={30}
+                              uncheckedIcon={false}
+                              checkedIcon={false}
+                              height={20}
+                              width={48}
+                              className="react-switch"
+                              id="material-switch"
+                            />
+                          </td>
+                          <td style={{ textAlign: "center" }}>{video.admin}</td>
+                          <td style={{ textAlign: "center" }}>
+                            {new Date(video.createdAt).toLocaleDateString()}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <button
+                              className="btn btn-primary me-2 mb-md-0"
+                              onClick={() => handleEdit(video)}
+                              data-bs-toggle="modal"
+                              href="#editVideoModalToggle"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              onClick={() => handleDelete(video._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" style={{textAlign: "right"}}>No Video available.</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </Table>
+
                 <Card.Footer className="bg-white text-center">
-                  <Link href="#" className="link-primary">
-                    View All Projects
-                  </Link>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <p className="mb-0">Total Courses: {totalVideo}</p>
+                    <Stack spacing={2} className="pagination">
+                      <Pagination
+                        count={totalPages}
+                        page={page}
+                        onChange={(event, value) => setPage(value)}
+                        style={{ color: "white" }}
+                        siblingCount={1}
+                        boundaryCount={1}
+                        showFirstButton
+                        showLastButton
+                      />
+                    </Stack>
+                  </div>
                 </Card.Footer>
               </Card>
             </Col>
@@ -884,7 +1040,7 @@ function Video() {
                     type="button"
                     className="btn btn-secondary"
                     data-bs-dismiss="modal"
-                    onClick={()=> setErrors({})}
+                    onClick={() => setErrors({})}
                   >
                     Close
                   </button>
@@ -894,6 +1050,66 @@ function Video() {
           </div>
         </div>
       </div>
+
+      {/* Modal for displaying full-size image */}
+      <Modal show={showModal} onHide={handleClose} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Thumbnail</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <img
+            src={`http://localhost:8080/public/thumbnails/${selectedImage}`}
+            alt="Video"
+            style={{ width: "100%", height: "auto" }}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal for displaying videos and documents */}
+      <Modal show={showFileModal} onHide={handleFileClose} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>File Viewer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {modalContent.type === "video" && (
+            <video controls style={{ width: "100%", height: "auto" }}>
+              <source src={modalContent.src} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
+          {modalContent.type === "pdf" && (
+            <iframe
+              src={modalContent.src}
+              style={{ width: "100%", height: "500px" }}
+              title="PDF Viewer"
+            ></iframe>
+          )}
+          {modalContent.type === "document" && (
+            <iframe
+              src={modalContent.src}
+              style={{ width: "100%", height: "500px" }}
+              title="Document Viewer"
+            ></iframe>
+          )}
+          {modalContent.type === "ppt" && (
+            <iframe
+              src={modalContent.src}
+              style={{ width: "100%", height: "500px" }}
+              title="PPT Viewer"
+            ></iframe>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleFileClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 }

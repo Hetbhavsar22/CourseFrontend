@@ -4,6 +4,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import Link from "next/link";
 import axios from "axios";
 import Switch from "react-switch";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 import {
   Container,
   Col,
@@ -11,28 +13,23 @@ import {
   Card,
   Table,
   Form,
+  Modal,
   Button,
   // Pagination,
   ProgressBar,
 } from "react-bootstrap";
-import dynamic from "next/dynamic";
-const CKEditor = dynamic(
-  () => import("@ckeditor/ckeditor5-react").then((mod) => mod.CKEditor),
-  { ssr: false }
-);
-const ClassicEditor = dynamic(
-  () => import("@ckeditor/ckeditor5-build-classic"),
-  { ssr: false }
-);
 
 const courselist = () => {
   const [courses, setCourses] = useState([]);
   const [cname, setCname] = useState("");
+  const [totalVideo, setTotalVideo] = useState("");
+  const [courseImage, setCourseImage] = useState("");
   const [hours, setHours] = useState("");
   const [description, setDescription] = useState("");
   const [language, setLanguage] = useState("");
   const [price, setPrice] = useState("");
   const [dprice, setDprice] = useState("");
+  const [createdBy, setCreatedBy] = useState("");
   const [courseType, setCourseType] = useState("");
   const [title, setTitle] = useState("");
   const [sdescription, setSdescription] = useState("");
@@ -54,52 +51,43 @@ const courselist = () => {
   const [error, setError] = useState("");
   const [errors, setErrors] = useState("");
   const [currentCourse, setCurrentCourse] = useState(null);
-  const [editorData, setEditorData] = useState("<p>Initial content</p>");
   const [loading, setLoading] = useState(false);
-
-  const handleEditorChange = (data) => {
-    setEditorData(data);
-  };
-  // const [searchQuery, setSearchQuery] = useState("");
-  // const [filteredCourses, setFilteredCourses] = useState([]);
-  // const [editorLoaded, setEditorLoaded] = useState(true);
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const itemsPerPage = 5;
-  // // Calculate the indices of the first and last item on the current page
-  // const indexOfLastItem = currentPage * itemsPerPage;
-  // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  // const currentItems = courses.slice(indexOfFirstItem, indexOfLastItem);
-  // // Calculate total pages
-  // const totalPages = Math.ceil(courses.length / itemsPerPage);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCourses, setTotalCourses] = useState(0);
+  const [sortBy, setSortBy] = useState("cname");
+  const [order, setOrder] = useState("asc");
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [searchQuery, page, sortBy, order]);
+
   const token = localStorage.getItem("token");
   const fetchCourses = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8080/course/courseList",
+        `http://localhost:8080/course/courseList?page=${page}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          params: {
+            search: searchQuery,
+            sortBy,
+            order,
+          },
         }
       );
-      setCourses(response.data);
+      setCourses(response.data.courses);
+      setTotalPages(response.data.pageCount);
+      setTotalCourses(response.data.totalCourses);
     } catch (error) {
       console.error("Error fetching courses:", error);
     }
   };
-
-  useEffect(() => {
-    fetchCourses();
-  }, []); // Dependency on searchQuery to refetch on change
-
-  // useEffect(() => {
-  //   // Set editorLoaded to true after component mounts
-  //   setEditorLoaded(true);
-  // }, []);
 
   const validateForm = () => {
     let errors = {};
@@ -108,6 +96,14 @@ const courselist = () => {
       errors.cname = "Course Name is required.";
     } else if (cname.length > 50) {
       errors.cname = "Name should be 50 characters or less.";
+    }
+
+    if (!totalVideo) {
+      errors.totalVideo = "Number of Course Videos are required.";
+    }
+
+    if (!courseImage) {
+      errors.courseImage = "Course Image is required.";
     }
 
     if (!hours) {
@@ -204,30 +200,45 @@ const courselist = () => {
     const isFormValid = validateForm();
     const token = localStorage.getItem("token");
 
-    const user = JSON.parse(localStorage.getItem("userData"));
-    console.log(user);
+    const admin = JSON.parse(localStorage.getItem("adminData"));
+    console.log(admin);
     if (isFormValid) {
       const typeData = {
         courseType: selectedOption,
         ...(selectedOption === "percentage" && { percentage }),
         ...(selectedOption === "timeIntervals" && {
-          // startTime: startTime ? startTime.toLocaleTimeString() : null,
-          // endTime: endTime ? endTime.toLocaleTimeString() : null,
           startTime: startTime ? startTime : null,
           endTime: endTime ? endTime : null,
         }),
       };
+
+      const formData = new FormData();
+      formData.append("cname", cname);
+      formData.append("totalVideo", totalVideo);
+      formData.append("courseImage", courseImage);
+      formData.append("hours", hours);
+      formData.append("description", description);
+      formData.append("language", language);
+      formData.append("price", price);
+      formData.append("dprice", dprice);
+      formData.append("createdBy", createdBy);
+      formData.append("courseType", selectedOption);
+      if (selectedOption === "percentage") {
+        formData.append("percentage", percentage);
+      } else if (selectedOption === "timeIntervals") {
+        formData.append("startTime", startTime);
+        formData.append("endTime", endTime);
+      }
+
       try {
         const response = await axios.post(
-          `http://localhost:8080/course/${user._id}/coursedetails`,
+          `http://localhost:8080/course/${admin._id}/coursedetails`,
+          formData,
           {
-            cname,
-            hours,
-            description,
-            language,
-            price,
-            dprice,
-            ...typeData,
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
 
@@ -236,12 +247,15 @@ const courselist = () => {
           console.log("Course details submitted successfully");
           fetchCourses();
           setCname("");
+          setTotalVideo("");
+          setCourseImage("");
           setHours("");
           setDescription("");
           setLanguage("");
           setPrice("");
           setDprice("");
           setPercentage("");
+          setCreatedBy("");
           setTime("");
           setStartTime(null);
           setEndTime(null);
@@ -274,6 +288,8 @@ const courselist = () => {
       try {
         const formData = new FormData();
         formData.append("cname", cname);
+        formData.append("totalVideo", totalVideo);
+        formData.append("courseImage", courseImage);
         formData.append("hours", hours);
         formData.append("description", description);
         formData.append("language", language);
@@ -300,7 +316,12 @@ const courselist = () => {
 
         const response = await axios.post(
           `http://localhost:8080/course/coursedetails/${editCourseId}`,
-          formData
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
         );
 
         if (response.status === 200) {
@@ -309,6 +330,8 @@ const courselist = () => {
           // Reset form fields
           setEditCourseId(null);
           setCname("");
+          setTotalVideo("");
+          setCourseImage("");
           setHours("");
           setDescription("");
           setLanguage("");
@@ -339,6 +362,8 @@ const courselist = () => {
   const handleEdit = (course) => {
     setEditCourseId(course._id);
     setCname(course.cname);
+    setTotalVideo(course.totalVideo);
+    setCourseImage(course.courseImage);
     setHours(course.hours);
     setDescription(course.description);
     setLanguage(course.language);
@@ -347,125 +372,46 @@ const courselist = () => {
     setCourseType(course.courseType);
     // Handling percentage and time for different types
     if (course.courseType === "percentage") {
-      setPercentage(course.percentage); // Set percentage if type is "80% complete"
+      setPercentage(course.percentage); // Set percentage if type is "percentage"
       setTime(""); // Clear time field if not needed
     } else if (course.courseType === "timeIntervals") {
-      setTime(course.time); // Set time if type is "time to time"
+      setTime(course.time); // Set time if type is "timeIntervals"
       setStartTime(course.startTime); // Set start time if available
       setEndTime(course.endTime); // Set end time if available
       setPercentage(""); // Clear percentage field if not needed
-    } else if (course.courseType === "all open") {
-      setPercentage(""); // Clear percentage for "all open"
-      setTime(""); // Clear time for "all open"
-      setStartTime(""); // Clear start time for "all open"
-      setEndTime(""); // Clear end time for "all open"
+    } else if (course.courseType === "allOpen") {
+      setPercentage(""); // Clear percentage for "allOpen"
+      setTime(""); // Clear time for "allOpen"
+      setStartTime(""); // Clear start time for "allOpen"
+      setEndTime(""); // Clear end time for "allOpen"
     }
     console.log("Edited course: ", course);
   };
 
   const handleDelete = async (id) => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:8080/course/coursedetails/${id}`
-      );
-      if (response.status === 200) {
-        console.log("Course deleted successfully");
-        fetchCourses();
-      } else {
-        setError("Failed to delete course");
+    if (window.confirm("Are you sure you want to delete this video?")) {
+      try {
+        const response = await axios.delete(
+          `http://localhost:8080/course/coursedetails/${id}`
+        );
+        if (response.status === 200) {
+          console.log("Course deleted successfully");
+          fetchCourses();
+        } else {
+          setError("Failed to delete course");
+        }
+      } catch (err) {
+        console.error("Delete failed:", err);
+        setError("Failed to delete course. Please try again.");
       }
-    } catch (err) {
-      console.error("Delete failed:", err);
-      setError("Failed to delete course. Please try again.");
     }
   };
-
-  // const handlevideoSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setErrors({});
-
-  //   const userId = localStorage.getItem("data.user._id");
-  //   const courseId = currentCourse._id;
-  //   // console.log(courseId);
-
-  //   if (!currentCourse) {
-  //     setError("No course selected.");
-  //     return;
-  //   }
-
-  //   const isFormValid1 = validateForm1();
-
-  //   if (isFormValid1) {
-  //     try {
-  //       const formData = new FormData();
-
-  //       // Append data to FormData object
-  //       formData.append("createdBy", userId);
-  //       formData.append("courseId", currentCourse._id);
-  //       formData.append("title", title);
-  //       formData.append("sdescription", sdescription);
-  //       formData.append("ldescription", ldescription);
-  //       formData.append("tags", tags);
-  //       formData.append("typev", selectedOption);
-
-  //       if (selectedOption === "document") {
-  //         formData.append("pdf", pdf);
-  //         formData.append("ppt", ppt);
-  //         formData.append("doc", doc);
-  //       }
-
-  //       if (selectedOption === "video") {
-  //         formData.append("dvideo", dvideo ? "true" : "false");
-  //         formData.append("thumbnail", thumbnail);
-  //         formData.append("videofile", videofile);
-  //       }
-
-  //       const response = await axios.post(
-  //         `http://localhost:8080/video/${courseId}/upload`,
-  //         formData
-  //         // {
-  //         //   headers: {
-  //         //     "Content-Type": "multipart/form-data",
-  //         //   },
-  //         // }
-  //       );
-
-  //       if (response.status === 200) {
-  //         // Reset form fields
-  //         fetchCourses();
-  //         setTitle("");
-  //         setSdescription("");
-  //         setLdescription("");
-  //         setTags([]);
-  //         setDvideo("");
-  //         setPdf(null);
-  //         setPpt(null);
-  //         setDoc(null);
-  //         setThumbnail(null);
-  //         setVideofile(null);
-  //         setSelectedOption("");
-  //       } else {
-  //         setError("Unexpected response status: " + response.status);
-  //       }
-  //     } catch (err) {
-  //       console.error("Submission failed:", err);
-
-  //       if (err.response) {
-  //         setError("Video/Document with the same details already exists.");
-  //       } else if (err.request) {
-  //         setError("No response from server. Please try again later.");
-  //       } else {
-  //         setError("Error: " + err.message);
-  //       }
-  //     }
-  //   }
-  // };
 
   const handlevideoSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
 
-    const user = JSON.parse(localStorage.getItem("userData"));
+    const admin = JSON.parse(localStorage.getItem("adminData"));
     const courseId = currentCourse._id;
 
     if (!currentCourse) {
@@ -479,7 +425,7 @@ const courselist = () => {
       setLoading(true);
       try {
         const formData = new FormData();
-        formData.append("createdBy", user._id);
+        formData.append("createdBy", admin._id);
         formData.append("courseId", currentCourse._id);
         formData.append("title", title);
         formData.append("sdescription", sdescription);
@@ -583,25 +529,19 @@ const courselist = () => {
     }
   };
 
-  // const filterCourses = () => {
-  //   const lowercasedQuery = searchQuery.toLowerCase();
-  //   const filtered = courses.filter((course) =>
-  //     course.cname.toLowerCase().includes(lowercasedQuery)
-  //   );
-  //   setFilteredCourses(filtered);
-  // };
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to first page on new search
+  };
 
-  // const handlePrevPage = () => {
-  //   setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
-  // };
+  const handleSort = (column) => {
+    // Toggle between ascending and descending order
+    const newOrder = sortBy === column && order === "asc" ? "desc" : "asc";
+    setSortBy(column);
+    setOrder(newOrder);
+    fetchCourses(); // Fetch sorted data
+  };
 
-  // const handleNextPage = () => {
-  //   setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages));
-  // };
-
-  // const handlePageChange = (page) => {
-  //   setCurrentPage(page);
-  // };
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
     if (checked) {
@@ -610,6 +550,13 @@ const courselist = () => {
       setTags((prevTags) => prevTags.filter((tag) => tag !== value));
     }
   };
+
+  const handleImageClick = (courseImage) => {
+    setSelectedImage(courseImage);
+    setShowModal(true);
+  };
+
+  const handleClose = () => setShowModal(false);
 
   return (
     <>
@@ -687,10 +634,72 @@ const courselist = () => {
                               {/* row */}
                               <Row className="mb-3">
                                 <label
+                                  htmlFor="totalVideo"
+                                  className="col-sm-4 col-form-label form-label"
+                                >
+                                  Total Video
+                                </label>
+                                <div className="col-md-8 col-12">
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="Total Video"
+                                    id="totalVideo"
+                                    onChange={(e) =>
+                                      setTotalVideo(e.target.value)
+                                    }
+                                    required
+                                  />
+                                  {errors.totalVideo && (
+                                    <p
+                                      style={{
+                                        color: "red",
+                                        fontSize: "14px",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      {errors.totalVideo}
+                                    </p>
+                                  )}
+                                </div>
+                              </Row>
+                              {/* row */}
+                              <Row className="mb-3">
+                                <label
+                                  htmlFor="courseImage"
+                                  className="col-sm-4 col-form-label form-label"
+                                >
+                                  Course Image
+                                </label>
+                                <div className="col-md-8 col-12">
+                                  <input
+                                    type="file"
+                                    className="form-control"
+                                    id="courseImage"
+                                    onChange={(e) =>
+                                      setCourseImage(e.target.files[0])
+                                    }
+                                  />
+                                  {errors.courseImage && (
+                                    <p
+                                      style={{
+                                        color: "red",
+                                        fontSize: "14px",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      {errors.courseImage}
+                                    </p>
+                                  )}
+                                </div>
+                              </Row>
+                              {/* row */}
+                              <Row className="mb-3">
+                                <label
                                   htmlFor="hours"
                                   className="col-sm-4 col-form-label form-label"
                                 >
-                                  Hours
+                                  Total Hours
                                 </label>
                                 <div className="col-md-8 col-12">
                                   <input
@@ -965,6 +974,7 @@ const courselist = () => {
                                   type="submit"
                                   onClick={handlecourseSubmit}
                                   data-bs-dismiss="modal"
+                                  style={{ color: "white" }}
                                   // disabled={Object.keys(errors).length !== 0}
                                 >
                                   Create
@@ -1003,170 +1013,264 @@ const courselist = () => {
               <Card>
                 <Card.Header className="bg-white py-4 d-flex justify-content-between align-items-center">
                   <h4 className="mb-0">Course</h4>
-                  {/*<div className="mb-0">
+                  <div className="mb-0">
                     <input
                       type="text"
                       className="form-control"
                       placeholder="Search by course name"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchChange}
                     />
-                  </div>*/}
+                  </div>
                 </Card.Header>
                 <Table responsive className="text-nowrap mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ textAlign: "center" }}>Name</th>
-                      <th style={{ textAlign: "center" }}>Hours</th>
-                      <th style={{ textAlign: "center" }}>Description</th>
-                      <th style={{ textAlign: "center" }}>Language</th>
-                      <th style={{ textAlign: "center" }}>Actual Price</th>
-                      <th style={{ textAlign: "center" }}>Display Price</th>
-                      <th style={{ textAlign: "center" }}>Type</th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("cname")}
+                      >
+                        Name{" "}
+                        {sortBy === "cname" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("totalVideo")}
+                      >
+                        Total Video{" "}
+                        {sortBy === "totalVideo" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th style={{ textAlign: "center" }}>Course Image</th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("hours")}
+                      >
+                        Total Hours{" "}
+                        {sortBy === "hours" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("description")}
+                      >
+                        Description{" "}
+                        {sortBy === "description" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("language")}
+                      >
+                        Language{" "}
+                        {sortBy === "language" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("price")}
+                      >
+                        Actual Price{" "}
+                        {sortBy === "price" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("dprice")}
+                      >
+                        Display Price{" "}
+                        {sortBy === "dprice" && (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("courseType")}
+                      >
+                        Type{" "}
+                        {sortBy === "courseType" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
                       <th style={{ textAlign: "center" }}>Additional Info</th>
-                      <th style={{ textAlign: "center" }}>Status</th>
-                      <th style={{ textAlign: "center" }}>Created By</th>
-                      <th style={{ textAlign: "center" }}>Created At</th>
-                      <th style={{ textAlign: "center" }}>Updated By</th>
+                      <th style={{ textAlign: "center" }}>Status </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("createdBy")}
+                      >
+                        Created By{" "}
+                        {sortBy === "createdBy" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("createdAt")}
+                      >
+                        Created At{" "}
+                        {sortBy === "createdAt" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        style={{ textAlign: "center", cursor: "pointer" }}
+                        onClick={() => handleSort("updatedBy")}
+                      >
+                        Updated By{" "}
+                        {sortBy === "updatedBy" &&
+                          (order === "asc" ? "▲" : "▼")}
+                      </th>
                       <th style={{ textAlign: "center" }}>Action</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {courses.map((course) => (
-                      <tr key={course._id}>
-                        <td style={{ textAlign: "center" }}>{course.cname}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {course.hours} Hours
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {course.description}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {course.language}
-                        </td>
-                        <td style={{ textAlign: "center" }}>{course.price}</td>
-                        <td style={{ textAlign: "center" }}>{course.dprice}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {course.courseType}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          <div className="float-start me-3">
-                            {course.courseType === "percentage"
-                              ? `${course.percentage}%`
-                              : ""}
-                          </div>
-                          <div className="mt-2">
-                            {course.courseType === "percentage" && (
-                              <ProgressBar
-                                now={course.percentage}
-                                style={{ height: "5px" }}
-                              />
-                            )}
-                          </div>
-                          {course.courseType === "timeIntervals" &&
-                          course.startTime &&
-                          course.endTime
-                            ? `${new Date(course.startTime).toLocaleTimeString(
-                                [],
-                                { hour: "2-digit", minute: "2-digit" }
-                              )} to ${new Date(
-                                course.endTime
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}`
-                            : ""}
-                          {course.courseType === "allOpen" ? "allOpen" : ""}
-                        </td>
 
-                        <td style={{ textAlign: "center" }}>
-                          <Switch
-                            checked={course.active}
-                            onChange={() => handleToggleActive(course._id)}
-                            onColor="#e1a6bf"
-                            onHandleColor="#dc4282"
-                            handleDiameter={30}
-                            uncheckedIcon={false}
-                            checkedIcon={false}
-                            boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"
-                            activeBoxShadow="0px 0px 1px 10px rgba(0, 0, 0, 0.2)"
-                            height={20}
-                            width={48}
-                            className="react-switch"
-                            id="material-switch"
-                          />
-                        </td>
-                        <td style={{ textAlign: "center" }}>{course.user}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {new Date(course.createdAt).toLocaleDateString()}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {course.updatedBy}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          <button
-                            className="btn btn-primary me-2 mb-md-0"
-                            onClick={() => handleEdit(course)}
-                            data-bs-toggle="modal"
-                            href="#editcourseModalToggle"
-                            role="button"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-primary me-2 mb-md-0"
-                            onClick={() => handleComponents(course)}
-                            data-bs-toggle="modal"
-                            href="#componentscourseModalToggle"
-                            role="button"
-                          >
-                            Contents
-                          </button>
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleDelete(course._id)}
-                          >
-                            Delete
-                          </button>
-                        </td>
+                  <tbody>
+                    {courses.length > 0 ? (
+                      courses.map((course) => (
+                        <tr key={course._id}>
+                          <td style={{ textAlign: "center" }}>
+                            {course.cname}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.totalVideo}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <div>
+                              <img
+                                className="rounded-circle"
+                                src={`http://localhost:8080/${course.courseImage}`}
+                                alt={course.cname}
+                                width={50}
+                                height={50}
+                                style={{ cursor: "pointer" }}
+                                onClick={() =>
+                                  handleImageClick(course.courseImage)
+                                }
+                              />
+                            </div>
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.hours} Hours
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.description}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.language}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.price}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.dprice}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.courseType}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <div className="float-start me-3">
+                              {course.courseType === "percentage"
+                                ? `${course.percentage}%`
+                                : ""}
+                            </div>
+                            <div className="mt-2">
+                              {course.courseType === "percentage" && (
+                                <ProgressBar
+                                  now={course.percentage}
+                                  style={{ height: "5px" }}
+                                />
+                              )}
+                            </div>
+                            {course.courseType === "timeIntervals" &&
+                            course.startTime &&
+                            course.endTime
+                              ? `${new Date(
+                                  course.startTime
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })} to ${new Date(
+                                  course.endTime
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}`
+                              : ""}
+                            {course.courseType === "allOpen" ? "allOpen" : ""}
+                          </td>
+
+                          <td style={{ textAlign: "center" }}>
+                            <Switch
+                              checked={course.active}
+                              onChange={() => handleToggleActive(course._id)}
+                              onColor="#e1a6bf"
+                              onHandleColor="#dc4282"
+                              handleDiameter={30}
+                              uncheckedIcon={false}
+                              checkedIcon={false}
+                              boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"
+                              activeBoxShadow="0px 0px 1px 10px rgba(0, 0, 0, 0.2)"
+                              height={20}
+                              width={48}
+                              className="react-switch"
+                              id="material-switch"
+                            />
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.createdBy}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {new Date(course.createdAt).toLocaleDateString()}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {course.updatedBy}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <button
+                              className="btn btn-primary me-2 mb-md-0"
+                              onClick={() => handleEdit(course)}
+                              data-bs-toggle="modal"
+                              href="#editcourseModalToggle"
+                              role="button"
+                              style={{ color: "white" }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-primary me-2 mb-md-0"
+                              onClick={() => handleComponents(course)}
+                              data-bs-toggle="modal"
+                              href="#componentscourseModalToggle"
+                              role="button"
+                              style={{ color: "white" }}
+                            >
+                              Contents
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              onClick={() => handleDelete(course._id)}
+                              style={{ color: "white" }}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" style={{textAlign: "right"}}>No Course available.</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </Table>
-                {/* <Row className="mt-3">
-                  <Col className="d-flex justify-content-between">
-                    <Button
-                      variant="primary"
-                      onClick={handlePrevPage}
-                      disabled={currentPage === 1}
-                      style={{ marginLeft: "30px" }}
-                    >
-                      Previous
-                    </Button>
-                    <Pagination>
-                      {Array.from({ length: totalPages }, (_, index) => (
-                        <Pagination.Item
-                          key={index + 1}
-                          active={index + 1 === currentPage}
-                          onClick={() => handlePageChange(index + 1)}
-                        >
-                          {index + 1}
-                        </Pagination.Item>
-                      ))}
-                    </Pagination>
-                    <Button
-                      variant="primary"
-                      onClick={handleNextPage}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                    </Button>
-                  </Col>
-                </Row> */}
                 <Card.Footer className="bg-white text-center">
-                  <Link href="#" className="link-primary">
-                    View All Projects
-                  </Link>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <p className="mb-0">Total Courses: {totalCourses}</p>
+                    <Stack spacing={2} className="pagination">
+                      <Pagination
+                        count={totalPages}
+                        page={page}
+                        onChange={(event, value) => setPage(value)}
+                        style={{ color: "white" }}
+                        siblingCount={1}
+                        boundaryCount={1}
+                        showFirstButton
+                        showLastButton
+                      />
+                    </Stack>
+                  </div>
                 </Card.Footer>
               </Card>
             </Col>
@@ -1230,10 +1334,68 @@ const courselist = () => {
                 {/* row */}
                 <Row className="mb-3">
                   <label
+                    htmlFor="totalVideo"
+                    className="col-sm-4 col-form-label form-label"
+                  >
+                    Total Video
+                  </label>
+                  <div className="col-md-8 col-12">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Total Video"
+                      id="totalVideo"
+                      value={totalVideo}
+                      onChange={(e) => setTotalVideo(e.target.value)}
+                    />
+                    {errors && errors.totalVideo && (
+                      <p
+                        style={{
+                          color: "red",
+                          fontSize: "14px",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        {errors.totalVideo}
+                      </p>
+                    )}
+                  </div>
+                </Row>
+                {/* row */}
+                <Row className="mb-3">
+                  <label
+                    htmlFor="courseImage"
+                    className="col-sm-4 col-form-label form-label"
+                  >
+                    Course Image
+                  </label>
+                  <div className="col-md-8 col-12">
+                    <input
+                      type="file"
+                      className="form-control"
+                      id="courseImage"
+                      onChange={(e) => setCourseImage(e.target.files[0])}
+                    />
+                    {errors.courseImage && (
+                      <p
+                        style={{
+                          color: "red",
+                          fontSize: "14px",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        {errors.courseImage}
+                      </p>
+                    )}
+                  </div>
+                </Row>
+                {/* row */}
+                <Row className="mb-3">
+                  <label
                     htmlFor="hours"
                     className="col-sm-4 col-form-label form-label"
                   >
-                    Hours
+                    Total Hours
                   </label>
                   <div className="col-md-8 col-12">
                     <input
@@ -1496,6 +1658,7 @@ const courselist = () => {
                     className="btn btn-primary"
                     type="submit"
                     data-bs-dismiss="modal"
+                    style={{ color: "white" }}
                   >
                     Edit
                   </button>
@@ -1934,36 +2097,6 @@ const courselist = () => {
                     )}
                   </div>
                 </Row>
-                {/* <Row className="mb-3">
-                  <label
-                    htmlFor="tags"
-                    className="col-sm-4 col-form-label form-label"
-                  >
-                    Tags
-                  </label>
-                  <div className="col-md-8 col-12">
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="tags"
-                      placeholder="Tags"
-                      value={tags}
-                      onChange={(e) => setTags(e.target.value)}
-                    />
-                    {errors?.tags && (
-                      <p
-                        style={{
-                          color: "red",
-                          fontSize: "14px",
-                          marginBottom: "6px",
-                        }}
-                      >
-                        {errors.tags}
-                      </p>
-                    )}
-                  </div>
-                </Row> */}
-
                 <div className="modal-footer">
                   {error && (
                     <p className="error-message" style={{ color: "red" }}>
@@ -1984,6 +2117,7 @@ const courselist = () => {
                     className="btn btn-primary"
                     type="submit"
                     data-bs-dismiss="modal"
+                    style={{ color: "white" }}
                   >
                     Submit
                   </button>
@@ -2001,6 +2135,25 @@ const courselist = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal for displaying full-size image */}
+      <Modal show={showModal} onHide={handleClose} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Course Image</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <img
+            src={`http://localhost:8080/${selectedImage}`}
+            alt="Course"
+            style={{ width: "100%", height: "auto" }}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 };
