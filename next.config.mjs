@@ -1,7 +1,10 @@
-import path from 'path';
+import path from "path";
 export default {
   sassOptions: {
-    includePaths: [path.join(process.cwd(), 'styles')],
+    includePaths: [path.join(process.cwd(), "styles")],
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
+  images: {
+    domains: ["via.placeholder.com"],
+  },
 };
